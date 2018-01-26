@@ -34,6 +34,10 @@ func (l *defaultLogger) SetLevel(level Level) {
 	l.level = level
 }
 
+func (l *defaultLogger) Level() Level {
+	return l.level
+}
+
 func (l *defaultLogger) SetOutput(w io.Writer) {
 	l.logger.SetOutput(w)
 }

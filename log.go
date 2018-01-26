@@ -52,6 +52,7 @@ const (
 
 type Logger interface {
 	SetLevel(level Level)
+	Level() Level
 	SetOutput(w io.Writer)
 	SetFlags(flags int)
 
@@ -85,6 +86,10 @@ func NewLogger(w io.Writer, level Level, flags int, calldepth int) Logger {
 
 func SetLevel(level Level) {
 	Std.SetLevel(level)
+}
+
+func GetLevel() Level {
+	return Std.Level()
 }
 
 func SetOutput(w io.Writer) {
