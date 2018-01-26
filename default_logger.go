@@ -169,7 +169,7 @@ func (l *defaultLogger) print(level Level, msg string) {
 
 			if l.flags&Lshortfile != 0 {
 				names := strings.Split(file, "/")
-				for i := 0; i < len(names)-1; i++ {
+				for i := 1; i < len(names)-1; i++ {
 					names[i] = names[i][0:1]
 				}
 				file = strings.Join(names, "/")
