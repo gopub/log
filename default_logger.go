@@ -194,11 +194,11 @@ func (l *defaultLogger) print(level Level, msg string) {
 		}
 
 		if len(file) > 0 && len(funcName) > 0 {
-			l.logger.Printf("[%s] %s(%s):%d %s", level.String(), file, funcName, line, msg)
+			l.logger.Printf("[%s] %s(%s):%d | %s", level.String(), file, funcName, line, msg)
 		} else if len(file) > 0 {
-			l.logger.Printf("[%s] %s:%d %s", level.String(), file, line, msg)
+			l.logger.Printf("[%s] %s:%d | %s", level.String(), file, line, msg)
 		} else if len(funcName) > 0 {
-			l.logger.Printf("[%s] %s:%d %s", level.String(), funcName, line, msg)
+			l.logger.Printf("[%s] %s:%d | %s", level.String(), funcName, line, msg)
 		}
 	} else {
 		l.logger.Printf("[%s] %s", level.String(), msg)
