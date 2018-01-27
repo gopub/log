@@ -16,7 +16,7 @@ var _pkgPath = func() string {
 		return ""
 	}
 	s = strings.TrimSuffix(s, "/")
-	log.Println(s)
+	//log.Println("GOPATH:", s)
 	return s + "/src/"
 }()
 
@@ -183,7 +183,6 @@ func (l *defaultLogger) print(level Level, msg string) {
 		}
 
 		var funcName string
-		log.Printf("%x, %x, %x", Lfunction, l.flags, l.flags&Lfunction)
 		if l.flags&Lfunction != 0 {
 			funcName = runtime.FuncForPC(function).Name()
 			if len(file) > 0 {
@@ -195,7 +194,7 @@ func (l *defaultLogger) print(level Level, msg string) {
 		}
 
 		if len(file) > 0 && len(funcName) > 0 {
-			l.logger.Printf("[%s] %s %s:%d %s", level.String(), file, funcName, line, msg)
+			l.logger.Printf("[%s] %s(%s):%d %s", level.String(), file, funcName, line, msg)
 		} else if len(file) > 0 {
 			l.logger.Printf("[%s] %s:%d %s", level.String(), file, line, msg)
 		} else if len(funcName) > 0 {
