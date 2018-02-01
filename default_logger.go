@@ -3,13 +3,14 @@ package log
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"runtime"
 	"strings"
+	"sync"
+	"time"
 )
 
-var _pkgPath = func() string {
+var PackagePath = func() string {
 	s := os.Getenv("GOPATH")
 	s = strings.TrimSpace(s)
 	if len(s) == 0 {
@@ -20,14 +21,39 @@ var _pkgPath = func() string {
 	return s + "/src/"
 }()
 
-const _GoSrc = "/go/src/"
+const GoSrc = "/go/src/"
+
+type syncWriter struct {
+	mu sync.Mutex // ensures atomic writes; protects the following fields
+	w  io.Writer  // destination for syncWriter
+}
+
+func (o *syncWriter) WriteAll(b []byte) error {
+	o.mu.Lock()
+	n, err := o.w.Write(b)
+	for n < len(b) && err == nil {
+		b = b[n:]
+		n, err = o.w.Write(b)
+	}
+	o.mu.Unlock()
+	return err
+}
+
+func (o *syncWriter) Write(b []byte) (int, error) {
+	o.mu.Lock()
+	n, err := o.w.Write(b)
+	o.mu.Unlock()
+	return n, err
+}
 
 //defaultLogger is the default implementation of logger interface
 type defaultLogger struct {
 	level     Level
 	flags     int
-	logger    *log.Logger
+	output    *syncWriter
 	calldepth int
+	fields    []*Field
+	ew        EntryWriter
 }
 
 func (l *defaultLogger) SetLevel(level Level) {
@@ -39,12 +65,15 @@ func (l *defaultLogger) Level() Level {
 }
 
 func (l *defaultLogger) SetOutput(w io.Writer) {
-	l.logger.SetOutput(w)
+	l.output.w = w
 }
 
 func (l *defaultLogger) SetFlags(flags int) {
 	l.flags = flags
-	l.logger.SetFlags(flags)
+}
+
+func (l *defaultLogger) SetEntryWriter(w EntryWriter) {
+	l.ew = w
 }
 
 func (l *defaultLogger) Trace(args ...interface{}) {
@@ -157,16 +186,32 @@ func (l *defaultLogger) Panicf(format string, args ...interface{}) {
 	panic(msg)
 }
 
+func (l *defaultLogger) WithFields(fields []*Field) FieldLogger {
+	nl := &defaultLogger{}
+	*nl = *l
+	nl.fields = append(nl.fields, fields...)
+	return nl
+}
+
 func (l *defaultLogger) print(level Level, msg string) {
+	var entry Entry
+	if l.flags&(Ltime|Ldate|Lmicroseconds) != 0 {
+		entry.Time = time.Now()
+		if l.flags&LUTC != 0 {
+			entry.Time = entry.Time.UTC()
+		}
+	}
+
 	if l.flags&(Llongfile|Lshortfile|Lfunction) != 0 {
 		function, file, line, _ := runtime.Caller(l.calldepth)
+		entry.Line = line
 		if l.flags&(Llongfile|Lshortfile) != 0 {
-			if len(_pkgPath) > 0 {
-				file = strings.TrimPrefix(file, _pkgPath)
+			if len(PackagePath) > 0 {
+				file = strings.TrimPrefix(file, PackagePath)
 			} else {
-				start := strings.Index(file, _GoSrc)
+				start := strings.Index(file, GoSrc)
 				if start > 0 {
-					start += len(_GoSrc)
+					start += len(GoSrc)
 				}
 				file = file[start:]
 			}
@@ -182,25 +227,19 @@ func (l *defaultLogger) print(level Level, msg string) {
 			file = ""
 		}
 
-		var funcName string
+		entry.File = file
 		if l.flags&Lfunction != 0 {
-			funcName = runtime.FuncForPC(function).Name()
+			entry.Function = runtime.FuncForPC(function).Name()
 			if len(file) > 0 {
-				i := strings.LastIndex(funcName, ".")
+				i := strings.LastIndex(entry.Function, ".")
 				if i >= 0 {
-					funcName = funcName[i+1:]
+					entry.Function = entry.Function[i+1:]
 				}
 			}
 		}
-
-		if len(file) > 0 && len(funcName) > 0 {
-			l.logger.Printf("[%s] %s(%s):%d | %s", level.String(), file, funcName, line, msg)
-		} else if len(file) > 0 {
-			l.logger.Printf("[%s] %s:%d | %s", level.String(), file, line, msg)
-		} else if len(funcName) > 0 {
-			l.logger.Printf("[%s] %s:%d | %s", level.String(), funcName, line, msg)
-		}
-	} else {
-		l.logger.Printf("[%s] %s", level.String(), msg)
 	}
+
+	entry.Flags = l.flags
+	entry.Message = msg
+	l.ew.Write(&entry, l.output)
 }

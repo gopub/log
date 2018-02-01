@@ -2,7 +2,6 @@ package log
 
 import (
 	"io"
-	"log"
 	"os"
 )
 
@@ -55,6 +54,7 @@ type Logger interface {
 	Level() Level
 	SetOutput(w io.Writer)
 	SetFlags(flags int)
+	SetEntryWriter(w EntryWriter)
 
 	Trace(args ...interface{})
 	Debug(args ...interface{})
@@ -73,13 +73,19 @@ type Logger interface {
 	Panicf(format string, args ...interface{})
 }
 
+type FieldLogger interface {
+	Logger
+	WithFields(fields []*Field) FieldLogger
+}
+
 var Std Logger = NewLogger(os.Stderr, TraceLevel, LstdFlags, 3)
 
 func NewLogger(w io.Writer, level Level, flags int, calldepth int) Logger {
 	return &defaultLogger{
 		level:     level,
 		flags:     flags,
-		logger:    log.New(w, "", flags&^Llongfile&^Lshortfile),
+		output:    &syncWriter{w: w},
+		ew:        &TextEntryWriter{},
 		calldepth: calldepth,
 	}
 }

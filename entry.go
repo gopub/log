@@ -1,6 +1,9 @@
 package log
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 type Field struct {
 	Key   string
@@ -11,10 +14,13 @@ type Entry struct {
 	Level    Level
 	Time     time.Time
 	File     string
-	Line     string
+	Line     int
 	Function string
 	Fields   []*Field
 	Message  string
+	Flags    int
+}
 
-	Flags int
+type EntryWriter interface {
+	Write(entry *Entry, w io.Writer) error
 }
