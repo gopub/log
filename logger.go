@@ -104,7 +104,7 @@ func (l *logger) SetFlags(flags int) {
 	l.flags = flags
 }
 
-func (l *logger) SetEntryWriter(w EntryPrinter) {
+func (l *logger) SetEntryPrinter(w EntryPrinter) {
 	l.ew = w
 }
 

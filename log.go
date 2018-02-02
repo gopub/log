@@ -75,7 +75,7 @@ type OutputSettable interface {
 }
 
 type EntryWriterSettable interface {
-	SetEntryWriter(w EntryPrinter)
+	SetEntryPrinter(w EntryPrinter)
 }
 
 var Std Logger = NewLogger(globals.output, globals.level, globals.flags, 3)
@@ -113,14 +113,14 @@ func GetFlags() int {
 	return globals.flags
 }
 
-func SetEntryWriter(w EntryPrinter) {
+func SetEntryPrinter(w EntryPrinter) {
 	globals.entryPrinter = w
 	if s, ok := Std.(EntryWriterSettable); ok {
-		s.SetEntryWriter(w)
+		s.SetEntryPrinter(w)
 	}
 }
 
-func GetEntryWriter() EntryPrinter {
+func GetEntryPrinter() EntryPrinter {
 	return globals.entryPrinter
 }
 
