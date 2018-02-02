@@ -7,12 +7,17 @@ import (
 
 func TestLogger_Debug(t *testing.T) {
 	log.Debug("This is a debug message")
+	log.Infof("count:%d", 3)
 }
 
 func TestFieldLogger_WithFields(t *testing.T) {
-	logger := log.WithFields([]*log.Field{{Key: "a", Value: 1}, {Key: "hello", Value: "world"}})
-	logger.Info("good")
-	logger.Error("wow")
+	logger := log.WithFields([]*log.Field{{Key: "userID", Value: 1}, {Key: "name", Value: "Tom"}})
+	logger.Error("data not found")
 
-	logger.WithFields([]*log.Field{{Key: "c", Value: 2}}).Infof("hello:%s", "wowowwow")
+	logger.WithFields([]*log.Field{{Key: "count", Value: 2}}).Infof("Try to post topic:%s", "Which is the best city")
+}
+
+func TestLogger_SetFlags(t *testing.T) {
+	log.SetFlags(log.Lmicroseconds | log.Lfunction)
+	log.Info("System started")
 }

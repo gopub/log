@@ -158,7 +158,7 @@ func Info(args ...interface{}) {
 	}
 
 	msg := fmt.Sprint(args...)
-	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, InfoLevel, nil, msg, 2))
 }
 
 func Warn(args ...interface{}) {
@@ -167,7 +167,7 @@ func Warn(args ...interface{}) {
 	}
 
 	msg := fmt.Sprint(args...)
-	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, WarnLevel, nil, msg, 2))
 }
 
 func Error(args ...interface{}) {
@@ -176,7 +176,7 @@ func Error(args ...interface{}) {
 	}
 
 	msg := fmt.Sprint(args...)
-	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, ErrorLevel, nil, msg, 2))
 }
 
 func Fatal(args ...interface{}) {
