@@ -26,6 +26,8 @@ func NewFieldLogger(l Logger, level Level, flags int, fields []*Field) FieldLogg
 func (l *fieldLogger) WithFields(fields []*Field) FieldLogger {
 	return &fieldLogger{
 		Logger: l.Logger,
+		level:  l.level,
+		flags:  l.flags,
 		fields: append(l.fields, fields...),
 	}
 }
