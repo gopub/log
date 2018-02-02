@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"io"
 	"os"
 )
@@ -8,7 +9,7 @@ import (
 type Level int
 
 const (
-	TraceLevel = iota
+	TraceLevel Level = iota
 	DebugLevel
 	InfoLevel
 	WarnLevel
@@ -34,7 +35,7 @@ func (l Level) String() string {
 	case PanicLevel:
 		return "PANIC"
 	default:
-		panic("unknown level")
+		return ""
 	}
 }
 
@@ -49,115 +50,203 @@ const (
 	LstdFlags     = Ldate | Ltime | Lshortfile | Lfunction // initial values for the standard logger
 )
 
-type Logger interface {
+var globals = struct {
+	flags        int
+	level        Level
+	output       io.Writer
+	entryPrinter EntryPrinter
+}{
+	flags:        LstdFlags,
+	level:        TraceLevel,
+	output:       os.Stderr,
+	entryPrinter: &EntryTextPrinter{},
+}
+
+type LevelSettable interface {
 	SetLevel(level Level)
-	Level() Level
-	SetOutput(w io.Writer)
+}
+
+type FlagsSettable interface {
 	SetFlags(flags int)
-	SetEntryWriter(w EntryWriter)
-
-	Trace(args ...interface{})
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Fatal(args ...interface{})
-	Panic(args ...interface{})
-
-	Tracef(format string, args ...interface{})
-	Debugf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Warnf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
-	Panicf(format string, args ...interface{})
 }
 
-type FieldLogger interface {
-	Logger
-	WithFields(fields []*Field) FieldLogger
+type OutputSettable interface {
+	SetOutput(output io.Writer)
 }
 
-var Std Logger = NewLogger(os.Stderr, TraceLevel, LstdFlags, 3)
+type EntryWriterSettable interface {
+	SetEntryWriter(w EntryPrinter)
+}
 
-func NewLogger(w io.Writer, level Level, flags int, calldepth int) Logger {
-	return &defaultLogger{
-		level:     level,
-		flags:     flags,
-		output:    &syncWriter{w: w},
-		ew:        &TextEntryWriter{},
-		calldepth: calldepth,
+var Std Logger = NewLogger(globals.output, globals.level, globals.flags, 3)
+
+func SetLevel(level Level) {
+	globals.level = level
+	if s, ok := Std.(LevelSettable); ok {
+		s.SetLevel(level)
 	}
 }
 
-func SetLevel(level Level) {
-	Std.SetLevel(level)
-}
-
 func GetLevel() Level {
-	return Std.Level()
+	return globals.level
 }
 
 func SetOutput(w io.Writer) {
-	Std.SetOutput(w)
+	globals.output = w
+	if s, ok := Std.(OutputSettable); ok {
+		s.SetOutput(w)
+	}
+}
+
+func GetOutput() io.Writer {
+	return globals.output
 }
 
 func SetFlags(flags int) {
-	Std.SetFlags(flags)
+	globals.flags = flags
+	if s, ok := Std.(FlagsSettable); ok {
+		s.SetFlags(flags)
+	}
+}
+
+func GetFlags() int {
+	return globals.flags
+}
+
+func SetEntryWriter(w EntryPrinter) {
+	globals.entryPrinter = w
+	if s, ok := Std.(EntryWriterSettable); ok {
+		s.SetEntryWriter(w)
+	}
+}
+
+func GetEntryWriter() EntryPrinter {
+	return globals.entryPrinter
+}
+
+func WithFields(fields []*Field) FieldLogger {
+	return NewFieldLogger(Std, globals.level, globals.flags, fields)
 }
 
 func Trace(args ...interface{}) {
-	Std.Trace(args...)
+	if globals.level > TraceLevel {
+		return
+	}
+	msg := fmt.Sprint(args...)
+	Std.PrintEntry(MakeEntry(globals.flags, TraceLevel, nil, msg, 2))
 }
 
 func Debug(args ...interface{}) {
-	Std.Debug(args...)
+	if globals.level > DebugLevel {
+		return
+	}
+	msg := fmt.Sprint(args...)
+	Std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
 }
 
 func Info(args ...interface{}) {
-	Std.Info(args...)
+	if globals.level > InfoLevel {
+		return
+	}
+
+	msg := fmt.Sprint(args...)
+	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Warn(args ...interface{}) {
-	Std.Warn(args...)
+	if globals.level > WarnLevel {
+		return
+	}
+
+	msg := fmt.Sprint(args...)
+	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Error(args ...interface{}) {
-	Std.Error(args...)
+	if globals.level > ErrorLevel {
+		return
+	}
+
+	msg := fmt.Sprint(args...)
+	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Fatal(args ...interface{}) {
-	Std.Fatal(args...)
+	if globals.level > FatalLevel {
+		return
+	}
+
+	msg := fmt.Sprint(args...)
+	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Panic(args ...interface{}) {
-	Std.Panic(args...)
+	if globals.level > PanicLevel {
+		return
+	}
+	msg := fmt.Sprint(args...)
+	Std.PrintEntry(MakeEntry(globals.flags, PanicLevel, nil, msg, 2))
+	panic(msg)
 }
 
 func Tracef(format string, args ...interface{}) {
-	Std.Tracef(format, args...)
+	if globals.level > TraceLevel {
+		return
+	}
+	msg := fmt.Sprintf(format, args...)
+	Std.PrintEntry(MakeEntry(globals.flags, TraceLevel, nil, msg, 2))
 }
 
 func Debugf(format string, args ...interface{}) {
-	Std.Debugf(format, args...)
+	if globals.level > DebugLevel {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	Std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
 }
 
 func Infof(format string, args ...interface{}) {
-	Std.Infof(format, args...)
+	if globals.level > InfoLevel {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	Std.PrintEntry(MakeEntry(globals.flags, InfoLevel, nil, msg, 2))
 }
 
 func Warnf(format string, args ...interface{}) {
-	Std.Warnf(format, args...)
+	if globals.level > WarnLevel {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	Std.PrintEntry(MakeEntry(globals.flags, WarnLevel, nil, msg, 2))
 }
 
 func Errorf(format string, args ...interface{}) {
-	Std.Errorf(format, args...)
+	if globals.level > ErrorLevel {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	Std.PrintEntry(MakeEntry(globals.flags, ErrorLevel, nil, msg, 2))
 }
 
 func Fatalf(format string, args ...interface{}) {
-	Std.Fatalf(format, args...)
+	if globals.level > FatalLevel {
+		return
+	}
+
+	msg := fmt.Sprintf(format, args...)
+	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Panicf(format string, args ...interface{}) {
-	Std.Panicf(format, args...)
+	if globals.level > PanicLevel {
+		return
+	}
+	msg := fmt.Sprintf(format, args...)
+	Std.PrintEntry(MakeEntry(globals.flags, PanicLevel, nil, msg, 2))
+	panic(msg)
 }

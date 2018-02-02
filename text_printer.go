@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-type TextEntryWriter struct {
+type EntryTextPrinter struct {
 	mu  sync.Mutex
 	buf []byte
 }
 
-func (w *TextEntryWriter) Write(entry *Entry, wr io.Writer) error {
+func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.buf = w.buf[0:0]
@@ -80,7 +80,7 @@ func itoa(buf *[]byte, i int, wid int) {
 	*buf = append(*buf, b[bp:]...)
 }
 
-func (w *TextEntryWriter) writeTime(t time.Time, flags int) {
+func (w *EntryTextPrinter) writeTime(t time.Time, flags int) {
 	if t.Unix() == 0 || flags&(Ldate|Ltime|Lmicroseconds) == 0 {
 		return
 	}
