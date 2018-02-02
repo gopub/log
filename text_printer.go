@@ -15,53 +15,53 @@ type EntryTextPrinter struct {
 func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	w.buf = w.buf[0:0]
-	w.buf = append(w.buf, '[')
-	w.buf = append(w.buf, entry.Level.String()...)
-	w.buf = append(w.buf, ']')
-	w.buf = append(w.buf, '\t')
-	w.writeTime(entry.Time, entry.Flags)
+	buf := w.buf[0:0]
+	buf = append(buf, '[')
+	buf = append(buf, entry.Level.String()...)
+	buf = append(buf, ']')
+	buf = append(buf, '\t')
+	w.writeTime(&buf, entry.Time, entry.Flags)
 	if len(entry.File) > 0 {
-		w.buf = append(w.buf, entry.File...)
+		buf = append(buf, entry.File...)
 		if len(entry.Function) > 0 {
-			w.buf = append(w.buf, '(')
-			w.buf = append(w.buf, entry.Function...)
-			w.buf = append(w.buf, ')')
+			buf = append(buf, '(')
+			buf = append(buf, entry.Function...)
+			buf = append(buf, ')')
 		}
 	} else if len(entry.Function) > 0 {
-		w.buf = append(w.buf, entry.Function...)
+		buf = append(buf, entry.Function...)
 	}
 
 	if len(entry.File) > 0 || len(entry.Function) > 0 {
-		w.buf = append(w.buf, ':')
-		itoa(&w.buf, entry.Line, -1)
-		w.buf = append(w.buf, '\t')
-		w.buf = append(w.buf, '|')
-		w.buf = append(w.buf, ' ')
+		buf = append(buf, ':')
+		itoa(&buf, entry.Line, -1)
+		buf = append(buf, '\t')
+		buf = append(buf, '|')
+		buf = append(buf, ' ')
 	}
 
 	for _, f := range entry.Fields {
-		w.buf = append(w.buf, f.Key...)
-		w.buf = append(w.buf, '=')
-		w.buf = append(w.buf, fmt.Sprint(f.Value)...)
-		w.buf = append(w.buf, ' ')
+		buf = append(buf, f.Key...)
+		buf = append(buf, '=')
+		buf = append(buf, fmt.Sprint(f.Value)...)
+		buf = append(buf, ' ')
 	}
 
 	if len(entry.Fields) > 0 {
-		w.buf = append(w.buf, '\t')
-		w.buf = append(w.buf, '|')
-		w.buf = append(w.buf, ' ')
+		buf = append(buf, '\t')
+		buf = append(buf, '|')
+		buf = append(buf, ' ')
 	}
 
-	w.buf = append(w.buf, entry.Message...)
-	if w.buf[len(w.buf)-1] != '\n' {
-		w.buf = append(w.buf, '\n')
+	buf = append(buf, entry.Message...)
+	if buf[len(buf)-1] != '\n' {
+		buf = append(buf, '\n')
 	}
 
-	n, err := wr.Write(w.buf)
-	for n < len(w.buf) && err == nil {
-		w.buf = w.buf[n:]
-		n, err = wr.Write(w.buf)
+	n, err := wr.Write(buf)
+	for n < len(buf) && err == nil {
+		buf = buf[n:]
+		n, err = wr.Write(buf)
 	}
 
 	return err
@@ -84,32 +84,32 @@ func itoa(buf *[]byte, i int, wid int) {
 	*buf = append(*buf, b[bp:]...)
 }
 
-func (w *EntryTextPrinter) writeTime(t time.Time, flags int) {
+func (w *EntryTextPrinter) writeTime(buf *[]byte, t time.Time, flags int) {
 	if t.Unix() == 0 || flags&(Ldate|Ltime|Lmicroseconds) == 0 {
 		return
 	}
 
 	if flags&Ldate != 0 {
 		year, month, day := t.Date()
-		itoa(&w.buf, year, 4)
-		w.buf = append(w.buf, '/')
-		itoa(&w.buf, int(month), 2)
-		w.buf = append(w.buf, '/')
-		itoa(&w.buf, day, 2)
-		w.buf = append(w.buf, ' ')
+		itoa(buf, year, 4)
+		*buf = append(*buf, '/')
+		itoa(buf, int(month), 2)
+		*buf = append(*buf, '/')
+		itoa(buf, day, 2)
+		*buf = append(*buf, ' ')
 	}
 
 	if flags&(Ltime|Lmicroseconds) != 0 {
 		hour, min, sec := t.Clock()
-		itoa(&w.buf, hour, 2)
-		w.buf = append(w.buf, ':')
-		itoa(&w.buf, min, 2)
-		w.buf = append(w.buf, ':')
-		itoa(&w.buf, sec, 2)
+		itoa(buf, hour, 2)
+		*buf = append(*buf, ':')
+		itoa(buf, min, 2)
+		*buf = append(*buf, ':')
+		itoa(buf, sec, 2)
 		if flags&Lmicroseconds != 0 {
-			w.buf = append(w.buf, '.')
-			itoa(&w.buf, t.Nanosecond()/1e3, 6)
+			*buf = append(*buf, '.')
+			itoa(buf, t.Nanosecond()/1e3, 6)
 		}
-		w.buf = append(w.buf, ' ')
+		*buf = append(*buf, ' ')
 	}
 }
