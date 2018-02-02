@@ -36,6 +36,8 @@ func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 		w.buf = append(w.buf, ':')
 		itoa(&w.buf, entry.Line, -1)
 		w.buf = append(w.buf, '\t')
+		w.buf = append(w.buf, '|')
+		w.buf = append(w.buf, ' ')
 	}
 
 	for _, f := range entry.Fields {
@@ -47,6 +49,8 @@ func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 
 	if len(entry.Fields) > 0 {
 		w.buf = append(w.buf, '\t')
+		w.buf = append(w.buf, '|')
+		w.buf = append(w.buf, ' ')
 	}
 
 	w.buf = append(w.buf, entry.Message...)

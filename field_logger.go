@@ -24,12 +24,17 @@ func NewFieldLogger(l Logger, level Level, flags int, fields []*Field) FieldLogg
 }
 
 func (l *fieldLogger) WithFields(fields []*Field) FieldLogger {
-	return &fieldLogger{
+	lo := &fieldLogger{
 		Logger: l.Logger,
 		level:  l.level,
 		flags:  l.flags,
-		fields: append(l.fields, fields...),
 	}
+
+	//in case of overlapping after multiple WithFields invokes
+	lo.fields = make([]*Field, len(l.fields))
+	copy(lo.fields, l.fields)
+	lo.fields = append(lo.fields, fields...)
+	return lo
 }
 
 func (l *fieldLogger) Trace(args ...interface{}) {
