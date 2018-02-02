@@ -78,11 +78,19 @@ type EntryWriterSettable interface {
 	SetEntryPrinter(w EntryPrinter)
 }
 
-var Std Logger = NewLogger(globals.output, globals.level, globals.flags, 3)
+var std Logger = NewLogger(globals.output, globals.level, globals.flags, 3)
+
+func GetStd() Logger {
+	return std
+}
+
+func SetStd(l Logger) {
+	std = l
+}
 
 func SetLevel(level Level) {
 	globals.level = level
-	if s, ok := Std.(LevelSettable); ok {
+	if s, ok := std.(LevelSettable); ok {
 		s.SetLevel(level)
 	}
 }
@@ -93,7 +101,7 @@ func GetLevel() Level {
 
 func SetOutput(w io.Writer) {
 	globals.output = w
-	if s, ok := Std.(OutputSettable); ok {
+	if s, ok := std.(OutputSettable); ok {
 		s.SetOutput(w)
 	}
 }
@@ -104,7 +112,7 @@ func GetOutput() io.Writer {
 
 func SetFlags(flags int) {
 	globals.flags = flags
-	if s, ok := Std.(FlagsSettable); ok {
+	if s, ok := std.(FlagsSettable); ok {
 		s.SetFlags(flags)
 	}
 }
@@ -115,7 +123,7 @@ func GetFlags() int {
 
 func SetEntryPrinter(w EntryPrinter) {
 	globals.entryPrinter = w
-	if s, ok := Std.(EntryWriterSettable); ok {
+	if s, ok := std.(EntryWriterSettable); ok {
 		s.SetEntryPrinter(w)
 	}
 }
@@ -125,7 +133,7 @@ func GetEntryPrinter() EntryPrinter {
 }
 
 func WithFields(fields []*Field) FieldLogger {
-	return NewFieldLogger(Std, globals.level, globals.flags, fields)
+	return NewFieldLogger(std, globals.level, globals.flags, fields)
 }
 
 func Trace(args ...interface{}) {
@@ -133,7 +141,7 @@ func Trace(args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	Std.PrintEntry(MakeEntry(globals.flags, TraceLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, TraceLevel, nil, msg, 2))
 }
 
 func Debug(args ...interface{}) {
@@ -141,7 +149,7 @@ func Debug(args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	Std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
 }
 
 func Info(args ...interface{}) {
@@ -150,7 +158,7 @@ func Info(args ...interface{}) {
 	}
 
 	msg := fmt.Sprint(args...)
-	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Warn(args ...interface{}) {
@@ -159,7 +167,7 @@ func Warn(args ...interface{}) {
 	}
 
 	msg := fmt.Sprint(args...)
-	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Error(args ...interface{}) {
@@ -168,7 +176,7 @@ func Error(args ...interface{}) {
 	}
 
 	msg := fmt.Sprint(args...)
-	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Fatal(args ...interface{}) {
@@ -177,7 +185,7 @@ func Fatal(args ...interface{}) {
 	}
 
 	msg := fmt.Sprint(args...)
-	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Panic(args ...interface{}) {
@@ -185,7 +193,7 @@ func Panic(args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	Std.PrintEntry(MakeEntry(globals.flags, PanicLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, PanicLevel, nil, msg, 2))
 	panic(msg)
 }
 
@@ -194,7 +202,7 @@ func Tracef(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	Std.PrintEntry(MakeEntry(globals.flags, TraceLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, TraceLevel, nil, msg, 2))
 }
 
 func Debugf(format string, args ...interface{}) {
@@ -203,7 +211,7 @@ func Debugf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	Std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
 }
 
 func Infof(format string, args ...interface{}) {
@@ -212,7 +220,7 @@ func Infof(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	Std.PrintEntry(MakeEntry(globals.flags, InfoLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, InfoLevel, nil, msg, 2))
 }
 
 func Warnf(format string, args ...interface{}) {
@@ -221,7 +229,7 @@ func Warnf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	Std.PrintEntry(MakeEntry(globals.flags, WarnLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, WarnLevel, nil, msg, 2))
 }
 
 func Errorf(format string, args ...interface{}) {
@@ -230,7 +238,7 @@ func Errorf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	Std.PrintEntry(MakeEntry(globals.flags, ErrorLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, ErrorLevel, nil, msg, 2))
 }
 
 func Fatalf(format string, args ...interface{}) {
@@ -239,7 +247,7 @@ func Fatalf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	Std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
 func Panicf(format string, args ...interface{}) {
@@ -247,6 +255,6 @@ func Panicf(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	Std.PrintEntry(MakeEntry(globals.flags, PanicLevel, nil, msg, 2))
+	std.PrintEntry(MakeEntry(globals.flags, PanicLevel, nil, msg, 2))
 	panic(msg)
 }
