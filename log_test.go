@@ -21,3 +21,7 @@ func TestLogger_SetFlags(t *testing.T) {
 	log.SetFlags(log.Lmicroseconds | log.Lfunction)
 	log.Info("System started")
 }
+
+func BenchmarkDebugf(b *testing.B) {
+	log.Debugf("ShortMessage:i:%d,f:%f,s:%s,v:%v", 10, 10.999, "hello", "world")
+}
