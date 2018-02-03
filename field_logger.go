@@ -1,10 +1,18 @@
 package log
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type FieldLogger interface {
 	Logger
-	WithFields(fields []*Field) FieldLogger
+
+	WithFields([]*Field) FieldLogger
+
+	//With return a new FieldLogger with appending fields
+	//keyValues is key1, value1, key2, value2, ...
+	//key must be convertible to string
+	With(keyValues ...interface{}) FieldLogger
 }
 
 type fieldLogger struct {
@@ -23,6 +31,26 @@ func NewFieldLogger(l Logger, level Level, flags int, fields []*Field) FieldLogg
 	}
 }
 
+func makeFields(keyValues ...interface{}) []*Field {
+	n := len(keyValues)
+	if n%2 != 0 {
+		std.Panic("keyValues should be pairs of (string, interface{})")
+	}
+
+	fields := make([]*Field, 0, n/2)
+	for i := 0; i < n/2; i += 2 {
+		if k, ok := keyValues[i].(string); !ok {
+			std.Panicf("keyValues[%d] isn't convertible to string", i)
+		} else if keyValues[i+1] == nil {
+			std.Panicf("keyValues[%d] is nil", i+1)
+		} else {
+			fields = append(fields, &Field{k, keyValues[i+1]})
+		}
+	}
+
+	return fields
+}
+
 func (l *fieldLogger) WithFields(fields []*Field) FieldLogger {
 	lo := &fieldLogger{
 		Logger: l.Logger,
@@ -35,6 +63,10 @@ func (l *fieldLogger) WithFields(fields []*Field) FieldLogger {
 	copy(lo.fields, l.fields)
 	lo.fields = append(lo.fields, fields...)
 	return lo
+}
+
+func (l *fieldLogger) With(keyValues ...interface{}) FieldLogger {
+	return l.WithFields(makeFields(keyValues...))
 }
 
 func (l *fieldLogger) Trace(args ...interface{}) {

@@ -12,10 +12,10 @@ Output:
 Disable output by setting `log.SetLevel(log.INFO)`
 ### Fields
 ``` 
-logger := log.WithFields([]*log.Field{{Key: "userID", Value: 1}, {Key: "name", Value: "Tom"}})
+logger := log.With("userID", 1, "name", "Tom")
 logger.Error("data not found")
 
-logger.WithFields([]*log.Field{{Key: "count", Value: 2}}).Infof("Try to post topic:%s", "Which is the best city")
+logger.With("count", 2).Infof("Try to post topic:%s", "Which is the best city")
 ```
 Output:
 ``` 

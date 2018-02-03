@@ -136,6 +136,10 @@ func WithFields(fields []*Field) FieldLogger {
 	return NewFieldLogger(std, globals.level, globals.flags, fields)
 }
 
+func With(keyValues ...interface{}) FieldLogger {
+	return NewFieldLogger(std, globals.level, globals.flags, makeFields(keyValues...))
+}
+
 func Trace(args ...interface{}) {
 	if globals.level > TraceLevel {
 		return
