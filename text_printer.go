@@ -16,11 +16,11 @@ func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	buf := w.buf[0:0]
+	w.writeTime(&buf, entry.Time, entry.Flags)
 	buf = append(buf, '[')
 	buf = append(buf, entry.Level.String()...)
 	buf = append(buf, ']')
 	buf = append(buf, '\t')
-	w.writeTime(&buf, entry.Time, entry.Flags)
 	if len(entry.File) > 0 {
 		buf = append(buf, entry.File...)
 		if len(entry.Function) > 0 {
@@ -43,7 +43,7 @@ func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 	for _, f := range entry.Fields {
 		buf = append(buf, f.Key...)
 		buf = append(buf, '=')
-		buf = append(buf, fmt.Sprint(f.Value)...)
+		buf = append(buf, fmt.Sprintf("%v", f.Value)...)
 		buf = append(buf, ' ')
 	}
 

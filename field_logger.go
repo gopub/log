@@ -38,13 +38,13 @@ func makeFields(keyValues ...interface{}) []*Field {
 	}
 
 	fields := make([]*Field, 0, n/2)
-	for i := 0; i < n/2; i += 2 {
-		if k, ok := keyValues[i].(string); !ok {
+	for i := 0; i < n/2; i++ {
+		if k, ok := keyValues[2*i].(string); !ok {
 			std.Panicf("keyValues[%d] isn't convertible to string", i)
-		} else if keyValues[i+1] == nil {
-			std.Panicf("keyValues[%d] is nil", i+1)
+		} else if keyValues[2*i+1] == nil {
+			std.Panicf("keyValues[%d] is nil", 2*i+1)
 		} else {
-			fields = append(fields, &Field{k, keyValues[i+1]})
+			fields = append(fields, &Field{k, keyValues[2*i+1]})
 		}
 	}
 
