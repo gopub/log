@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const _LogLevelWidth = 8
+
 type EntryTextPrinter struct {
 	mu  sync.Mutex
 	buf []byte
@@ -17,10 +19,14 @@ func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 	defer w.mu.Unlock()
 	buf := w.buf[0:0]
 	w.writeTime(&buf, entry.Time, entry.Flags)
+
 	buf = append(buf, '[')
 	buf = append(buf, entry.Level.String()...)
 	buf = append(buf, ']')
-	buf = append(buf, '\t')
+	for i := len(entry.Level.String()) + 2; i < _LogLevelWidth; i++ {
+		buf = append(buf, ' ')
+	}
+
 	if len(entry.File) > 0 {
 		buf = append(buf, entry.File...)
 		if len(entry.Function) > 0 {

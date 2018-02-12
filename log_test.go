@@ -18,7 +18,7 @@ func TestFieldLogger_WithFields(t *testing.T) {
 }
 
 func TestLogger_SetFlags(t *testing.T) {
-	log.SetFlags(log.Lmicroseconds | log.Lfunction)
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lfunction)
 	log.Info("System started")
 }
 
