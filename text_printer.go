@@ -7,7 +7,18 @@ import (
 	"time"
 )
 
-const _LogLevelWidth = 8
+const logLevelWidth = 8
+
+//var (
+//	greenColor   = string([]byte{27, 91, 57, 55, 59, 52, 50, 109})
+//	whiteColor   = string([]byte{27, 91, 57, 48, 59, 52, 55, 109})
+//	yellowColor  = string([]byte{27, 91, 57, 55, 59, 52, 51, 109})
+//	redColor     = string([]byte{27, 91, 57, 55, 59, 52, 49, 109})
+//	blueColor    = string([]byte{27, 91, 57, 55, 59, 52, 52, 109})
+//	magentaColor = string([]byte{27, 91, 57, 55, 59, 52, 53, 109})
+//	cyanColor    = string([]byte{27, 91, 57, 55, 59, 52, 54, 109})
+//	resetColor   = string([]byte{27, 91, 48, 109})
+//)
 
 type EntryTextPrinter struct {
 	mu  sync.Mutex
@@ -23,7 +34,7 @@ func (w *EntryTextPrinter) Print(entry *Entry, wr io.Writer) error {
 	buf = append(buf, '[')
 	buf = append(buf, entry.Level.String()...)
 	buf = append(buf, ']')
-	for i := len(entry.Level.String()) + 2; i < _LogLevelWidth; i++ {
+	for i := len(entry.Level.String()) + 2; i < logLevelWidth; i++ {
 		buf = append(buf, ' ')
 	}
 
