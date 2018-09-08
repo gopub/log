@@ -154,7 +154,7 @@ func Debug(args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintln(args...)
-	msg = msg[:len(msg)-1]
+
 	std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
 }
 
