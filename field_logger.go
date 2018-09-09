@@ -73,7 +73,8 @@ func (l *fieldLogger) Trace(args ...interface{}) {
 	if l.level > TraceLevel {
 		return
 	}
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[:len(msg)-1]
 	l.PrintEntry(MakeEntry(l.flags, TraceLevel, l.fields, msg, 2))
 }
 
@@ -81,7 +82,8 @@ func (l *fieldLogger) Debug(args ...interface{}) {
 	if l.level > DebugLevel {
 		return
 	}
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[:len(msg)-1]
 	l.PrintEntry(MakeEntry(l.flags, DebugLevel, l.fields, msg, 2))
 }
 
@@ -90,7 +92,8 @@ func (l *fieldLogger) Info(args ...interface{}) {
 		return
 	}
 
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[:len(msg)-1]
 	l.PrintEntry(MakeEntry(l.flags, InfoLevel, l.fields, msg, 2))
 }
 
@@ -99,7 +102,8 @@ func (l *fieldLogger) Warn(args ...interface{}) {
 		return
 	}
 
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[:len(msg)-1]
 	l.PrintEntry(MakeEntry(l.flags, WarnLevel, l.fields, msg, 2))
 }
 
@@ -108,7 +112,8 @@ func (l *fieldLogger) Error(args ...interface{}) {
 		return
 	}
 
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[:len(msg)-1]
 	l.PrintEntry(MakeEntry(l.flags, ErrorLevel, l.fields, msg, 2))
 }
 
@@ -117,7 +122,8 @@ func (l *fieldLogger) Fatal(args ...interface{}) {
 		return
 	}
 
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[:len(msg)-1]
 	l.PrintEntry(MakeEntry(l.flags, FatalLevel, l.fields, msg, 2))
 }
 
@@ -125,7 +131,8 @@ func (l *fieldLogger) Panic(args ...interface{}) {
 	if l.level > PanicLevel {
 		return
 	}
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[:len(msg)-1]
 	l.PrintEntry(MakeEntry(l.flags, PanicLevel, l.fields, msg, 2))
 	panic(msg)
 }

@@ -213,7 +213,6 @@ func Tracef(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	msg = msg[:len(msg)-1]
 	std.PrintEntry(MakeEntry(globals.flags, TraceLevel, nil, msg, 2))
 }
 
@@ -223,7 +222,6 @@ func Debugf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	msg = msg[:len(msg)-1]
 	std.PrintEntry(MakeEntry(globals.flags, DebugLevel, nil, msg, 2))
 }
 
@@ -233,7 +231,6 @@ func Infof(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	msg = msg[:len(msg)-1]
 	std.PrintEntry(MakeEntry(globals.flags, InfoLevel, nil, msg, 2))
 }
 
@@ -243,7 +240,6 @@ func Warnf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	msg = msg[:len(msg)-1]
 	std.PrintEntry(MakeEntry(globals.flags, WarnLevel, nil, msg, 2))
 }
 
@@ -253,7 +249,6 @@ func Errorf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	msg = msg[:len(msg)-1]
 	std.PrintEntry(MakeEntry(globals.flags, ErrorLevel, nil, msg, 2))
 }
 
@@ -263,7 +258,6 @@ func Fatalf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	msg = msg[:len(msg)-1]
 	std.PrintEntry(MakeEntry(globals.flags, FatalLevel, nil, msg, 2))
 }
 
@@ -272,7 +266,6 @@ func Panicf(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	msg = msg[:len(msg)-1]
 	std.PrintEntry(MakeEntry(globals.flags, PanicLevel, nil, msg, 2))
 	panic(msg)
 }
