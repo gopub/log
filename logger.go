@@ -64,12 +64,11 @@ type Logger interface {
 	PrintEntry(entry *Entry)
 }
 
-func NewLogger(output io.Writer, level Level, flags int, callDepth int) Logger {
+func NewLogger(output io.Writer, level Level, flags int) Logger {
 	l := &logger{
-		level:     level,
-		flags:     flags,
-		ew:        &EntryTextPrinter{},
-		callDepth: callDepth,
+		level: level,
+		flags: flags,
+		ew:    &EntryTextPrinter{},
 	}
 	l.output.w = output
 	return l
@@ -77,10 +76,9 @@ func NewLogger(output io.Writer, level Level, flags int, callDepth int) Logger {
 
 //logger is the default implementation of logger interface
 type logger struct {
-	level     Level
-	flags     int
-	callDepth int
-	ew        EntryPrinter
+	level Level
+	flags int
+	ew    EntryPrinter
 
 	output struct {
 		mu sync.Mutex

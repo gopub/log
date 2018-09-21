@@ -78,7 +78,7 @@ type EntryWriterSettable interface {
 	SetEntryPrinter(w EntryPrinter)
 }
 
-var std Logger = NewLogger(globals.output, globals.level, globals.flags, 3)
+var std Logger = NewLogger(globals.output, globals.level, globals.flags)
 
 func GetStd() Logger {
 	return std
