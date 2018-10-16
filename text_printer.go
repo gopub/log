@@ -102,21 +102,21 @@ func itoa(buf *[]byte, i int, wid int) {
 }
 
 func (w *EntryTextPrinter) writeTime(buf *[]byte, t time.Time, flags int) {
-	if t.Unix() == 0 || flags&(Ldate|Ltime|Lmicroseconds) == 0 {
+	if t.Unix() == 0 || flags&(Ldate|Ltime|Lmillisecond|Lmicroseconds) == 0 {
 		return
 	}
 
 	if flags&Ldate != 0 {
 		year, month, day := t.Date()
 		itoa(buf, year, 4)
-		*buf = append(*buf, '/')
+		*buf = append(*buf, '-')
 		itoa(buf, int(month), 2)
-		*buf = append(*buf, '/')
+		*buf = append(*buf, '-')
 		itoa(buf, day, 2)
 		*buf = append(*buf, ' ')
 	}
 
-	if flags&(Ltime|Lmicroseconds) != 0 {
+	if flags&(Ltime|Lmillisecond|Lmicroseconds) != 0 {
 		hour, min, sec := t.Clock()
 		itoa(buf, hour, 2)
 		*buf = append(*buf, ':')
@@ -126,7 +126,15 @@ func (w *EntryTextPrinter) writeTime(buf *[]byte, t time.Time, flags int) {
 		if flags&Lmicroseconds != 0 {
 			*buf = append(*buf, '.')
 			itoa(buf, t.Nanosecond()/1e3, 6)
+		} else if flags&Lmillisecond != 0 {
+			*buf = append(*buf, '.')
+			itoa(buf, t.Nanosecond()/1e6, 3)
 		}
+		_, offset := t.Zone()
+		// e.g. UTC+0800, offset is 28800 seconds, +0800 = offset/3600*100 = offset/36
+		offset = offset / 36
+		*buf = append(*buf, '+')
+		itoa(buf, offset, 4)
 		*buf = append(*buf, ' ')
 	}
 }

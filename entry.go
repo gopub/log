@@ -29,7 +29,7 @@ type EntryPrinter interface {
 
 func MakeEntry(flags int, level Level, fields []*Field, message string, callDepth int) *Entry {
 	entry := &Entry{}
-	if flags&(Ltime|Ldate|Lmicroseconds) != 0 {
+	if flags&(Ltime|Ldate|Lmillisecond|Lmicroseconds) != 0 {
 		entry.Time = time.Now()
 		if flags&LUTC != 0 {
 			entry.Time = entry.Time.UTC()

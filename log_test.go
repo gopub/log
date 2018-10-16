@@ -18,8 +18,10 @@ func TestFieldLogger_WithFields(t *testing.T) {
 }
 
 func TestLogger_SetFlags(t *testing.T) {
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lfunction | log.LUTC)
+	log.Info("log.Ldate | log.Lmicroseconds | log.Lfunction | log.LUTC")
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lfunction)
-	log.Info("System started")
+	log.Info("log.Ldate | log.Lmicroseconds | log.Lfunction")
 }
 
 func BenchmarkDebugf(b *testing.B) {
