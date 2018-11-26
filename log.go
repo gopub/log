@@ -89,11 +89,12 @@ func SetStd(l Logger) {
 	std = l
 }
 
-func SetLevel(level Level) {
+func SetLevel(level Level) Level {
 	globals.level = level
 	if s, ok := std.(LevelSettable); ok {
 		s.SetLevel(level)
 	}
+	return level
 }
 
 func GetLevel() Level {
