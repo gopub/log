@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -62,6 +63,7 @@ type Logger interface {
 	Panicf(format string, args ...interface{})
 
 	PrintEntry(entry *Entry)
+	SprintEntry(entry *Entry) string
 }
 
 func NewLogger(output io.Writer, level Level, flags int) Logger {
@@ -217,7 +219,8 @@ func (l *logger) Fatalf(format string, args ...interface{}) {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, FatalLevel, nil, msg, 2))
+	e := MakeEntry(l.flags, FatalLevel, nil, msg, 2)
+	panic(e)
 }
 
 func (l *logger) Panicf(format string, args ...interface{}) {
@@ -225,8 +228,8 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, PanicLevel, nil, msg, 2))
-	panic(msg)
+	e := MakeEntry(l.flags, PanicLevel, nil, msg, 2)
+	panic(e)
 }
 
 func (l *logger) Write(p []byte) (int, error) {
@@ -240,4 +243,16 @@ func (l *logger) PrintEntry(entry *Entry) {
 		return
 	}
 	l.ew.Print(entry, l)
+}
+
+func (l *logger) SprintEntry(entry *Entry) string {
+	if l.level > entry.Level {
+		return ""
+	}
+	b := &bytes.Buffer{}
+	err := l.ew.Print(entry, b)
+	if err != nil {
+		panic(err)
+	}
+	return b.String()
 }
