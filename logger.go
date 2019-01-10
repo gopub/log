@@ -220,7 +220,7 @@ func (l *logger) Fatalf(format string, args ...interface{}) {
 
 	msg := fmt.Sprintf(format, args...)
 	e := MakeEntry(l.flags, FatalLevel, nil, msg, 2)
-	panic(e)
+	panic(l.SprintEntry(e))
 }
 
 func (l *logger) Panicf(format string, args ...interface{}) {
@@ -229,7 +229,7 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 	}
 	msg := fmt.Sprintf(format, args...)
 	e := MakeEntry(l.flags, PanicLevel, nil, msg, 2)
-	panic(e)
+	panic(l.SprintEntry(e))
 }
 
 func (l *logger) Write(p []byte) (int, error) {

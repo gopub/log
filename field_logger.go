@@ -133,7 +133,7 @@ func (l *fieldLogger) Panic(args ...interface{}) {
 	}
 	msg := fmt.Sprintln(args...)
 	msg = msg[:len(msg)-1]
-	l.PrintEntry(MakeEntry(l.flags, PanicLevel, l.fields, msg, 2))
+	msg = l.SprintEntry(MakeEntry(l.flags, PanicLevel, l.fields, msg, 2))
 	panic(msg)
 }
 
@@ -195,6 +195,6 @@ func (l *fieldLogger) Panicf(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, PanicLevel, l.fields, msg, 2))
+	msg = l.SprintEntry(MakeEntry(l.flags, PanicLevel, l.fields, msg, 2))
 	panic(msg)
 }
