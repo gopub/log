@@ -11,16 +11,3 @@ const (
 	Lfunction                                                     // function name and line number: print:23. overrides Llongfile, Lshortfile
 	LstdFlags     = Ldate | Lmillisecond | Lshortfile | Lfunction // initial values for the standard logger
 )
-
-type FlagsSettable interface {
-	SetFlags(flags int)
-}
-
-func SetFlags(flags int) {
-	globals.flags = flags
-	std.SetFlags(flags)
-}
-
-func GetFlags() int {
-	return globals.flags
-}

@@ -2,18 +2,7 @@ package log
 
 import (
 	"io"
-	"os"
 )
-
-var globals = struct {
-	flags  int
-	level  Level
-	output io.Writer
-}{
-	flags:  LstdFlags,
-	level:  TraceLevel,
-	output: os.Stderr,
-}
 
 type Field struct {
 	Key   string
@@ -21,9 +10,11 @@ type Field struct {
 }
 
 type Logger interface {
+	Level() Level
 	SetLevel(level Level)
-	SetOutput(output io.Writer)
+	Flags() int
 	SetFlags(flags int)
+	SetOutput(output io.Writer)
 
 	Trace(args ...interface{})
 	Debug(args ...interface{})
@@ -50,91 +41,84 @@ type Logger interface {
 	Derive() Logger
 }
 
-type OutputSettable interface {
-	SetOutput(output io.Writer)
+var defaultLogger Logger
+
+func Default() Logger {
+	return defaultLogger
 }
 
-var std Logger = NewLogger(globals.output, globals.level, globals.flags)
-
-func GetStd() Logger {
-	return std
+func SetDefault(l Logger) {
+	defaultLogger = l
 }
 
-func SetStd(l Logger) {
-	std = l
+func SetFlags(flags int) {
+	defaultLogger.SetFlags(flags)
 }
 
-func SetOutput(w io.Writer) {
-	globals.output = w
-	if s, ok := std.(OutputSettable); ok {
-		s.SetOutput(w)
-	}
-}
-
-func GetOutput() io.Writer {
-	return globals.output
+func Flags() int {
+	return defaultLogger.Flags()
 }
 
 func WithFields(fields []*Field) Logger {
-	return std.WithFields(fields)
+	return defaultLogger.WithFields(fields)
 }
 
 func With(keyValues ...interface{}) Logger {
-	return std.With(keyValues...)
+	return defaultLogger.With(keyValues...)
 }
 
 func Trace(args ...interface{}) {
-	std.Trace(args...)
+	defaultLogger.Trace(args...)
 }
 
 func Debug(args ...interface{}) {
-	std.Debug(args...)
+	defaultLogger.Debug(args...)
 }
 
 func Info(args ...interface{}) {
-	std.Info(args...)
+	defaultLogger.Info(args...)
 }
 
 func Warn(args ...interface{}) {
-	std.Warn(args...)
+	defaultLogger.Warn(args...)
 }
 
 func Error(args ...interface{}) {
-	std.Error(args...)
+	defaultLogger.Error(args...)
 }
 
 func Fatal(args ...interface{}) {
-	std.Fatal(args...)
+	defaultLogger.Fatal(args...)
 }
 
 func Panic(args ...interface{}) {
-	std.Panic(args...)
+	defaultLogger.Panic(args...)
 }
 
 func Tracef(format string, args ...interface{}) {
-	std.Tracef(format, args...)
+	defaultLogger.Tracef(format, args...)
 }
 
 func Debugf(format string, args ...interface{}) {
-	std.Debugf(format, args...)
+	defaultLogger.Debugf(format, args...)
 }
 
 func Infof(format string, args ...interface{}) {
-	std.Debugf(format, args...)
+	defaultLogger.Debugf(format, args...)
 }
 
 func Warnf(format string, args ...interface{}) {
-	std.Warnf(format, args...)
+	defaultLogger.Warnf(format, args...)
 }
 
 func Errorf(format string, args ...interface{}) {
-	std.Errorf(format, args...)
+	defaultLogger.Errorf(format, args...)
 }
 
 func Fatalf(format string, args ...interface{}) {
-	std.Fatalf(format, args...)
+	defaultLogger.Fatalf(format, args...)
 }
 
 func Panicf(format string, args ...interface{}) {
-	std.Panicf(format, args...)
+	defaultLogger.Panicf(format, args...)
 }

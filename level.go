@@ -35,17 +35,3 @@ func (l Level) String() string {
 		return ""
 	}
 }
-
-type LevelSettable interface {
-	SetLevel(level Level)
-}
-
-func SetLevel(level Level) Level {
-	globals.level = level
-	std.SetLevel(level)
-	return level
-}
-
-func GetLevel() Level {
-	return globals.level
-}

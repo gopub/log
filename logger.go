@@ -38,16 +38,33 @@ func NewLogger(output io.Writer, level Level, flags int) Logger {
 	return l
 }
 
+func (l *logger) Level() Level {
+	return l.level
+}
+
 func (l *logger) SetLevel(level Level) {
 	l.level = level
 }
 
-func (l *logger) SetOutput(w io.Writer) {
-	l.render.SetWriter(w)
+func SetLevel(level Level) Level {
+	defaultLogger.SetLevel(level)
+	return level
+}
+
+func GetLevel() Level {
+	return defaultLogger.Level()
+}
+
+func (l *logger) Flags() int {
+	return l.flags
 }
 
 func (l *logger) SetFlags(flags int) {
 	l.flags = flags
+}
+
+func (l *logger) SetOutput(w io.Writer) {
+	l.render.SetWriter(w)
 }
 
 func (l *logger) log(level Level, args []interface{}) {
@@ -172,15 +189,15 @@ func (l *logger) Derive() Logger {
 func makeFields(keyValues ...interface{}) []*Field {
 	n := len(keyValues)
 	if n%2 != 0 {
-		std.Panic("keyValues should be pairs of (string, interface{})", keyValues)
+		defaultLogger.Panic("keyValues should be pairs of (string, interface{})", keyValues)
 	}
 
 	fields := make([]*Field, 0, n/2)
 	for i := 0; i < n/2; i++ {
 		if k, ok := keyValues[2*i].(string); !ok {
-			std.Panicf("keyValues[%d] isn't convertible to string", i)
+			defaultLogger.Panicf("keyValues[%d] isn't convertible to string", i)
 		} else if keyValues[2*i+1] == nil {
-			std.Panicf("keyValues[%d] is nil", 2*i+1)
+			defaultLogger.Panicf("keyValues[%d] is nil", 2*i+1)
 		} else {
 			fields = append(fields, &Field{k, keyValues[2*i+1]})
 		}
