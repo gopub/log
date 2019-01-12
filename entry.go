@@ -7,6 +7,7 @@ import (
 )
 
 type entry struct {
+	Name     string
 	Level    Level
 	Time     time.Time
 	File     string
@@ -17,8 +18,13 @@ type entry struct {
 	Flags    int
 }
 
-func newEntry(flags int, level Level, fields []*Field, message string, callDepth int) *entry {
+func newEntry(flags int, level Level, name string, fields []*Field, message string, callDepth int) *entry {
 	e := &entry{}
+
+	if flags&Lname != 0 {
+		e.Name = name
+	}
+
 	if flags&(Ltime|Ldate|Lmillisecond|Lmicroseconds) != 0 {
 		e.Time = time.Now()
 		if flags&LUTC != 0 {
@@ -42,7 +48,7 @@ func newEntry(flags int, level Level, fields []*Field, message string, callDepth
 
 			if flags&Lshortfile != 0 {
 				names := strings.Split(file, "/")
-				for i := 1; i < len(names)-1; i++ {
+				for i := 0; i < len(names)-1; i++ {
 					names[i] = names[i][0:1]
 				}
 				file = strings.Join(names, "/")

@@ -23,6 +23,7 @@ const GoSrc = "/go/src/"
 
 //logger is the default implementation of logger interface
 type logger struct {
+	name   string
 	level  Level
 	flags  int
 	render *render
@@ -36,6 +37,14 @@ func NewLogger(output io.Writer, level Level, flags int) Logger {
 		render: newRender(output),
 	}
 	return l
+}
+
+func (l *logger) Name() string {
+	return l.name
+}
+
+func (l *logger) SetName(name string) {
+	l.name = name
 }
 
 func (l *logger) Level() Level {
@@ -72,7 +81,7 @@ func (l *logger) Log(level Level, callDepth int, args []interface{}) {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	err := l.render.Render(newEntry(l.flags, level, l.fields, msg, callDepth+1))
+	err := l.render.Render(newEntry(l.flags, level, l.name, l.fields, msg, callDepth+1))
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
@@ -83,7 +92,7 @@ func (l *logger) Logf(level Level, callDepth int, format string, args []interfac
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	err := l.render.Render(newEntry(l.flags, level, l.fields, msg, callDepth+1))
+	err := l.render.Render(newEntry(l.flags, level, l.name, l.fields, msg, callDepth+1))
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
@@ -118,7 +127,7 @@ func (l *logger) Panic(args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	e := newEntry(l.flags, PanicLevel, l.fields, msg, 2)
+	e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
 	panic(l.render.RenderString(e))
 }
 
@@ -151,7 +160,7 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	e := newEntry(l.flags, PanicLevel, l.fields, msg, 2)
+	e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
 	panic(l.render.RenderString(e))
 }
 
@@ -173,8 +182,9 @@ func (l *logger) With(keyValues ...interface{}) Logger {
 	return l.WithFields(makeFields(keyValues...))
 }
 
-func (l *logger) Derive() Logger {
+func (l *logger) Derive(name string) Logger {
 	nl := &logger{
+		name:   name,
 		level:  l.level,
 		flags:  l.flags,
 		render: l.render,

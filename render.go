@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-const logLevelWidth = 8
-
 type render struct {
 	wr  io.Writer
 	mu  sync.Mutex
@@ -61,9 +59,12 @@ func renderEntry(buf *[]byte, e *entry) {
 
 	*buf = append(*buf, '[')
 	*buf = append(*buf, e.Level.String()...)
-	*buf = append(*buf, ']')
-	for i := len(e.Level.String()) + 2; i < logLevelWidth; i++ {
-		*buf = append(*buf, ' ')
+	*buf = append(*buf, ']', ' ')
+
+	if len(e.Name) > 0 {
+		*buf = append(*buf, '[')
+		*buf = append(*buf, e.Name...)
+		*buf = append(*buf, ']', ' ')
 	}
 
 	if len(e.File) > 0 {

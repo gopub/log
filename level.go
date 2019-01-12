@@ -18,19 +18,19 @@ func (l Level) String() string {
 	case AllLevel:
 		return "ALL"
 	case TraceLevel:
-		return "TRACE"
+		return "TRA"
 	case DebugLevel:
-		return "DEBUG"
+		return "DEB"
 	case InfoLevel:
-		return "INFO"
+		return "INF"
 	case WarnLevel:
-		return "WARN"
+		return "WRN"
 	case ErrorLevel:
-		return "ERROR"
+		return "ERR"
 	case FatalLevel:
-		return "FATAL"
+		return "FAT"
 	case PanicLevel:
-		return "PANIC"
+		return "PAN"
 	default:
 		return ""
 	}

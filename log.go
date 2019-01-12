@@ -11,6 +11,8 @@ type Field struct {
 }
 
 type Logger interface {
+	Name() string
+	SetName(name string)
 	Level() Level
 	SetLevel(level Level)
 	Flags() int
@@ -42,7 +44,7 @@ type Logger interface {
 	//keyValues is key1, value1, key2, value2, ...
 	//key must be convertible to string
 	With(keyValues ...interface{}) Logger
-	Derive() Logger
+	Derive(name string) Logger
 }
 
 var defaultLogger Logger
@@ -98,7 +100,7 @@ func Fatal(args ...interface{}) {
 func Panic(args ...interface{}) {
 	msg := fmt.Sprint(args...)
 	if l, ok := defaultLogger.(*logger); ok {
-		e := newEntry(l.flags, PanicLevel, l.fields, msg, 2)
+		e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
 		panic(l.render.RenderString(e))
 	} else {
 		panic(msg)
@@ -132,7 +134,7 @@ func Fatalf(format string, args ...interface{}) {
 func Panicf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	if l, ok := defaultLogger.(*logger); ok {
-		e := newEntry(l.flags, PanicLevel, l.fields, msg, 2)
+		e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
 		panic(l.render.RenderString(e))
 	} else {
 		panic(msg)
