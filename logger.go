@@ -72,7 +72,7 @@ func (l *logger) Log(level Level, callDepth int, args []interface{}) {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, callDepth+1))
+	err := l.render.Render(newEntry(l.flags, level, l.fields, msg, callDepth+1))
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
@@ -83,7 +83,7 @@ func (l *logger) Logf(level Level, callDepth int, format string, args []interfac
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, callDepth+1))
+	err := l.render.Render(newEntry(l.flags, level, l.fields, msg, callDepth+1))
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
