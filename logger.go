@@ -166,6 +166,7 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 
 func (l *logger) WithFields(fields []*Field) Logger {
 	nl := &logger{
+		name:   l.name,
 		level:  l.level,
 		flags:  l.flags,
 		render: l.render,
