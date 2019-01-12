@@ -1,18 +1,12 @@
 package log
 
 import (
-	"io"
 	"runtime"
 	"strings"
 	"time"
 )
 
-type Field struct {
-	Key   string
-	Value interface{}
-}
-
-type Entry struct {
+type entry struct {
 	Level    Level
 	Time     time.Time
 	File     string
@@ -23,22 +17,18 @@ type Entry struct {
 	Flags    int
 }
 
-type EntryPrinter interface {
-	Print(entry *Entry, w io.Writer) error
-}
-
-func MakeEntry(flags int, level Level, fields []*Field, message string, callDepth int) *Entry {
-	entry := &Entry{}
+func newEntry(flags int, level Level, fields []*Field, message string, callDepth int) *entry {
+	e := &entry{}
 	if flags&(Ltime|Ldate|Lmillisecond|Lmicroseconds) != 0 {
-		entry.Time = time.Now()
+		e.Time = time.Now()
 		if flags&LUTC != 0 {
-			entry.Time = entry.Time.UTC()
+			e.Time = e.Time.UTC()
 		}
 	}
 
 	if flags&(Llongfile|Lshortfile|Lfunction) != 0 {
 		function, file, line, _ := runtime.Caller(callDepth)
-		entry.Line = line
+		e.Line = line
 		if flags&(Llongfile|Lshortfile) != 0 {
 			if len(PackagePath) > 0 {
 				file = strings.TrimPrefix(file, PackagePath)
@@ -61,22 +51,21 @@ func MakeEntry(flags int, level Level, fields []*Field, message string, callDept
 			file = ""
 		}
 
-		entry.File = file
+		e.File = file
 		if flags&Lfunction != 0 {
-			entry.Function = runtime.FuncForPC(function).Name()
+			e.Function = runtime.FuncForPC(function).Name()
 			if len(file) > 0 {
-				i := strings.LastIndex(entry.Function, ".")
+				i := strings.LastIndex(e.Function, ".")
 				if i >= 0 {
-					entry.Function = entry.Function[i+1:]
+					e.Function = e.Function[i+1:]
 				}
 			}
 		}
 	}
 
-	entry.Flags = flags
-	entry.Message = message
-	entry.Fields = fields
-	entry.Level = level
-
-	return entry
+	e.Flags = flags
+	e.Message = message
+	e.Fields = fields
+	e.Level = level
+	return e
 }

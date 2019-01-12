@@ -1,12 +1,11 @@
 package log
 
 import (
-	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
-	"sync"
 )
 
 var PackagePath = func() string {
@@ -22,142 +21,79 @@ var PackagePath = func() string {
 
 const GoSrc = "/go/src/"
 
-type syncWriter struct {
-	mu sync.Mutex // ensures atomic writes; protects the following fields
-	w  io.Writer  // destination for syncWriter
-}
-
-func (o *syncWriter) WriteAll(b []byte) error {
-	o.mu.Lock()
-	n, err := o.w.Write(b)
-	for n < len(b) && err == nil {
-		b = b[n:]
-		n, err = o.w.Write(b)
-	}
-	o.mu.Unlock()
-	return err
-}
-
-func (o *syncWriter) Write(b []byte) (int, error) {
-	o.mu.Lock()
-	n, err := o.w.Write(b)
-	o.mu.Unlock()
-	return n, err
-}
-
-type Logger interface {
-	Trace(args ...interface{})
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Fatal(args ...interface{})
-	Panic(args ...interface{})
-
-	Tracef(format string, args ...interface{})
-	Debugf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Warnf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
-	Panicf(format string, args ...interface{})
-
-	PrintEntry(entry *Entry)
-	SprintEntry(entry *Entry) string
+//logger is the default implementation of logger interface
+type logger struct {
+	level  Level
+	flags  int
+	render *render
+	fields []*Field
 }
 
 func NewLogger(output io.Writer, level Level, flags int) Logger {
 	l := &logger{
-		level: level,
-		flags: flags,
-		ew:    &EntryTextPrinter{},
+		level:  level,
+		flags:  flags,
+		render: newRender(output),
 	}
-	l.output.w = output
 	return l
-}
-
-//logger is the default implementation of logger interface
-type logger struct {
-	level Level
-	flags int
-	ew    EntryPrinter
-
-	output struct {
-		mu sync.Mutex
-		w  io.Writer
-	}
 }
 
 func (l *logger) SetLevel(level Level) {
 	l.level = level
 }
 
-func (l *logger) Level() Level {
-	return l.level
-}
-
 func (l *logger) SetOutput(w io.Writer) {
-	l.output.w = w
+	l.render.SetWriter(w)
 }
 
 func (l *logger) SetFlags(flags int) {
 	l.flags = flags
 }
 
-func (l *logger) SetEntryPrinter(w EntryPrinter) {
-	l.ew = w
+func (l *logger) log(level Level, args []interface{}) {
+	if l.level > level {
+		return
+	}
+	msg := fmt.Sprint(args...)
+	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, 3))
+	if err != nil {
+		log.Fatalf("Failed to write log: %v", err)
+	}
+}
+
+func (l *logger) logf(level Level, format string, args []interface{}) {
+	if l.level > level {
+		return
+	}
+	msg := fmt.Sprintf(format, args...)
+	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, 3))
+	if err != nil {
+		log.Fatalf("Failed to write log: %v", err)
+	}
 }
 
 func (l *logger) Trace(args ...interface{}) {
-	if l.level > TraceLevel {
-		return
-	}
-	msg := fmt.Sprint(args...)
-	l.PrintEntry(MakeEntry(l.flags, TraceLevel, nil, msg, 2))
+	l.log(TraceLevel, args)
 }
 
 func (l *logger) Debug(args ...interface{}) {
-	if l.level > DebugLevel {
-		return
-	}
-	msg := fmt.Sprint(args...)
-	l.PrintEntry(MakeEntry(l.flags, DebugLevel, nil, msg, 2))
+	l.log(DebugLevel, args)
 }
 
 func (l *logger) Info(args ...interface{}) {
-	if l.level > InfoLevel {
-		return
-	}
-
-	msg := fmt.Sprint(args...)
-	l.PrintEntry(MakeEntry(l.flags, InfoLevel, nil, msg, 2))
+	l.log(InfoLevel, args)
 }
 
 func (l *logger) Warn(args ...interface{}) {
-	if l.level > WarnLevel {
-		return
-	}
-
-	msg := fmt.Sprint(args...)
-	l.PrintEntry(MakeEntry(l.flags, WarnLevel, nil, msg, 2))
+	l.log(WarnLevel, args)
 }
 
 func (l *logger) Error(args ...interface{}) {
-	if l.level > ErrorLevel {
-		return
-	}
-
-	msg := fmt.Sprint(args...)
-	l.PrintEntry(MakeEntry(l.flags, ErrorLevel, nil, msg, 2))
+	l.log(ErrorLevel, args)
 }
 
 func (l *logger) Fatal(args ...interface{}) {
-	if l.level > FatalLevel {
-		return
-	}
-
-	msg := fmt.Sprint(args...)
-	l.PrintEntry(MakeEntry(l.flags, FatalLevel, nil, msg, 2))
+	l.log(FatalLevel, args)
 }
 
 func (l *logger) Panic(args ...interface{}) {
@@ -165,62 +101,32 @@ func (l *logger) Panic(args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	l.PrintEntry(MakeEntry(l.flags, PanicLevel, nil, msg, 2))
-	panic(msg)
+	e := newEntry(l.flags, PanicLevel, l.fields, msg, 2)
+	panic(l.render.RenderString(e))
 }
 
 func (l *logger) Tracef(format string, args ...interface{}) {
-	if l.level > TraceLevel {
-		return
-	}
-	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, TraceLevel, nil, msg, 2))
+	l.logf(TraceLevel, format, args)
 }
 
 func (l *logger) Debugf(format string, args ...interface{}) {
-	if l.level > DebugLevel {
-		return
-	}
-
-	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, DebugLevel, nil, msg, 2))
+	l.logf(DebugLevel, format, args)
 }
 
 func (l *logger) Infof(format string, args ...interface{}) {
-	if l.level > InfoLevel {
-		return
-	}
-
-	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, InfoLevel, nil, msg, 2))
+	l.logf(InfoLevel, format, args)
 }
 
 func (l *logger) Warnf(format string, args ...interface{}) {
-	if l.level > WarnLevel {
-		return
-	}
-
-	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, WarnLevel, nil, msg, 2))
+	l.logf(WarnLevel, format, args)
 }
 
 func (l *logger) Errorf(format string, args ...interface{}) {
-	if l.level > ErrorLevel {
-		return
-	}
-
-	msg := fmt.Sprintf(format, args...)
-	l.PrintEntry(MakeEntry(l.flags, ErrorLevel, nil, msg, 2))
+	l.logf(ErrorLevel, format, args)
 }
 
 func (l *logger) Fatalf(format string, args ...interface{}) {
-	if l.level > FatalLevel {
-		return
-	}
-
-	msg := fmt.Sprintf(format, args...)
-	e := MakeEntry(l.flags, FatalLevel, nil, msg, 2)
-	panic(l.SprintEntry(e))
+	l.logf(FatalLevel, format, args)
 }
 
 func (l *logger) Panicf(format string, args ...interface{}) {
@@ -228,31 +134,57 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	e := MakeEntry(l.flags, PanicLevel, nil, msg, 2)
-	panic(l.SprintEntry(e))
+	e := newEntry(l.flags, PanicLevel, l.fields, msg, 2)
+	panic(l.render.RenderString(e))
 }
 
-func (l *logger) Write(p []byte) (int, error) {
-	l.output.mu.Lock()
-	defer l.output.mu.Unlock()
-	return l.output.w.Write(p)
+func (l *logger) WithFields(fields []*Field) Logger {
+	nl := &logger{
+		level:  l.level,
+		flags:  l.flags,
+		render: l.render,
+	}
+
+	//in case of overlapping after multiple WithFields invokes
+	nl.fields = make([]*Field, len(l.fields))
+	copy(nl.fields, l.fields)
+	nl.fields = append(nl.fields, fields...)
+	return nl
 }
 
-func (l *logger) PrintEntry(entry *Entry) {
-	if l.level > entry.Level {
-		return
-	}
-	l.ew.Print(entry, l)
+func (l *logger) With(keyValues ...interface{}) Logger {
+	return l.WithFields(makeFields(keyValues...))
 }
 
-func (l *logger) SprintEntry(entry *Entry) string {
-	if l.level > entry.Level {
-		return ""
+func (l *logger) Derive() Logger {
+	nl := &logger{
+		level:  l.level,
+		flags:  l.flags,
+		render: l.render,
 	}
-	b := &bytes.Buffer{}
-	err := l.ew.Print(entry, b)
-	if err != nil {
-		panic(err)
+
+	//in case of overlapping after multiple WithFields invokes
+	nl.fields = make([]*Field, len(l.fields))
+	copy(nl.fields, l.fields)
+	return nl
+}
+
+func makeFields(keyValues ...interface{}) []*Field {
+	n := len(keyValues)
+	if n%2 != 0 {
+		std.Panic("keyValues should be pairs of (string, interface{})", keyValues)
 	}
-	return b.String()
+
+	fields := make([]*Field, 0, n/2)
+	for i := 0; i < n/2; i++ {
+		if k, ok := keyValues[2*i].(string); !ok {
+			std.Panicf("keyValues[%d] isn't convertible to string", i)
+		} else if keyValues[2*i+1] == nil {
+			std.Panicf("keyValues[%d] is nil", 2*i+1)
+		} else {
+			fields = append(fields, &Field{k, keyValues[2*i+1]})
+		}
+	}
+
+	return fields
 }
