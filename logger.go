@@ -184,10 +184,14 @@ func (l *logger) With(keyValues ...interface{}) Logger {
 
 func (l *logger) Derive(name string) Logger {
 	nl := &logger{
-		name:   name,
+		name:   l.name,
 		level:  l.level,
 		flags:  l.flags,
 		render: l.render,
+	}
+
+	if len(name) > 0 {
+		nl.name = name
 	}
 
 	//in case of overlapping after multiple WithFields invokes
