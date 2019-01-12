@@ -15,7 +15,7 @@ var PackagePath = func() string {
 		return ""
 	}
 	s = strings.TrimSuffix(s, "/")
-	//log.Println("GOPATH:", s)
+	//Log.Println("GOPATH:", s)
 	return s + "/src/"
 }()
 
@@ -67,50 +67,50 @@ func (l *logger) SetOutput(w io.Writer) {
 	l.render.SetWriter(w)
 }
 
-func (l *logger) log(level Level, args []interface{}) {
+func (l *logger) Log(level Level, callDepth int, args []interface{}) {
 	if l.level > level {
 		return
 	}
 	msg := fmt.Sprint(args...)
-	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, 3))
+	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, callDepth+1))
 	if err != nil {
-		log.Fatalf("Failed to write log: %v", err)
+		log.Fatalf("Failed to write Log: %v", err)
 	}
 }
 
-func (l *logger) logf(level Level, format string, args []interface{}) {
+func (l *logger) Logf(level Level, callDepth int, format string, args []interface{}) {
 	if l.level > level {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, 3))
+	err := l.render.Render(newEntry(l.flags, TraceLevel, l.fields, msg, callDepth+1))
 	if err != nil {
-		log.Fatalf("Failed to write log: %v", err)
+		log.Fatalf("Failed to write Log: %v", err)
 	}
 }
 
 func (l *logger) Trace(args ...interface{}) {
-	l.log(TraceLevel, args)
+	l.Log(TraceLevel, 2, args)
 }
 
 func (l *logger) Debug(args ...interface{}) {
-	l.log(DebugLevel, args)
+	l.Log(DebugLevel, 2, args)
 }
 
 func (l *logger) Info(args ...interface{}) {
-	l.log(InfoLevel, args)
+	l.Log(InfoLevel, 2, args)
 }
 
 func (l *logger) Warn(args ...interface{}) {
-	l.log(WarnLevel, args)
+	l.Log(WarnLevel, 2, args)
 }
 
 func (l *logger) Error(args ...interface{}) {
-	l.log(ErrorLevel, args)
+	l.Log(ErrorLevel, 2, args)
 }
 
 func (l *logger) Fatal(args ...interface{}) {
-	l.log(FatalLevel, args)
+	l.Log(FatalLevel, 2, args)
 }
 
 func (l *logger) Panic(args ...interface{}) {
@@ -123,27 +123,27 @@ func (l *logger) Panic(args ...interface{}) {
 }
 
 func (l *logger) Tracef(format string, args ...interface{}) {
-	l.logf(TraceLevel, format, args)
+	l.Logf(TraceLevel, 2, format, args)
 }
 
 func (l *logger) Debugf(format string, args ...interface{}) {
-	l.logf(DebugLevel, format, args)
+	l.Logf(DebugLevel, 2, format, args)
 }
 
 func (l *logger) Infof(format string, args ...interface{}) {
-	l.logf(InfoLevel, format, args)
+	l.Logf(InfoLevel, 2, format, args)
 }
 
 func (l *logger) Warnf(format string, args ...interface{}) {
-	l.logf(WarnLevel, format, args)
+	l.Logf(WarnLevel, 2, format, args)
 }
 
 func (l *logger) Errorf(format string, args ...interface{}) {
-	l.logf(ErrorLevel, format, args)
+	l.Logf(ErrorLevel, 2, format, args)
 }
 
 func (l *logger) Fatalf(format string, args ...interface{}) {
-	l.logf(FatalLevel, format, args)
+	l.Logf(FatalLevel, 2, format, args)
 }
 
 func (l *logger) Panicf(format string, args ...interface{}) {

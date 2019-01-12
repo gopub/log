@@ -18,7 +18,7 @@ type render struct {
 func newRender(wr io.Writer) *render {
 	return &render{
 		wr:  wr,
-		buf: make([]byte, 0, 2048), // 2048 bytes should be enough for most log entry
+		buf: make([]byte, 0, 2048), // 2048 bytes should be enough for most Log entry
 	}
 }
 
@@ -46,7 +46,7 @@ func (r *render) Render(e *entry) error {
 	return err
 }
 
-// RenderString is only called by log.Panic[f], it's ok to use local buffer
+// RenderString is only called by Log.Panic[f], it's ok to use local buffer
 func (r *render) RenderString(e *entry) string {
 	r.mu.Lock()
 	r.buf = r.buf[0:0]

@@ -19,9 +19,9 @@ func TestFieldLogger_WithFields(t *testing.T) {
 
 func TestLogger_SetFlags(t *testing.T) {
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lfunction | log.LUTC)
-	log.Info("log.Ldate | log.Lmicroseconds | log.Lfunction | log.LUTC")
+	log.Info("Log.Ldate | Log.Lmicroseconds | Log.Lfunction | Log.LUTC")
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lfunction)
-	log.Info("log.Ldate | log.Lmicroseconds | log.Lfunction")
+	log.Info("Log.Ldate | Log.Lmicroseconds | Log.Lfunction")
 }
 
 func BenchmarkDebugf(b *testing.B) {
