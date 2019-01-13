@@ -65,6 +65,10 @@ func Flags() int {
 	return defaultLogger.Flags()
 }
 
+func GetLogger(name string) Logger {
+	return defaultLogger.Derive(name)
+}
+
 func WithFields(fields []*Field) Logger {
 	return defaultLogger.WithFields(fields)
 }
