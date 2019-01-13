@@ -24,10 +24,10 @@ func TestLogger_SetFlags(t *testing.T) {
 	log.Info("Log.Ldate | Log.Lmicroseconds | Log.Lfunction")
 }
 
-func TestLogger_Derive(t *testing.T) {
-	l := log.Default().Derive("SuperAPP")
+func TestLogger_GetLogger(t *testing.T) {
+	l := log.GetLogger("TestModule")
 	l.SetFlags(log.LstdFlags)
-	l.Info("Let's go!!!")
+	l.Info("This is a log")
 }
 
 func BenchmarkDebugf(b *testing.B) {
