@@ -102,7 +102,8 @@ func Fatal(args ...interface{}) {
 }
 
 func Panic(args ...interface{}) {
-	msg := fmt.Sprint(args...)
+	msg := fmt.Sprintln(args...)
+	msg = msg[0 : len(msg)-1]
 	if l, ok := defaultLogger.(*logger); ok {
 		e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
 		panic(l.render.RenderString(e))

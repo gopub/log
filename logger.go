@@ -80,7 +80,10 @@ func (l *logger) Log(level Level, callDepth int, args []interface{}) {
 	if l.level > level {
 		return
 	}
-	msg := fmt.Sprint(args...)
+
+	// fmt.Sprint won't add space between args, fmt.Sprintln will do, but need to erase extra newline
+	msg := fmt.Sprintln(args...)
+	msg = msg[0 : len(msg)-1]
 	err := l.render.Render(newEntry(l.flags, level, l.name, l.fields, msg, callDepth+1))
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
@@ -126,7 +129,9 @@ func (l *logger) Panic(args ...interface{}) {
 	if l.level > PanicLevel {
 		return
 	}
-	msg := fmt.Sprint(args...)
+	// fmt.Sprint won't add space between args
+	msg := fmt.Sprintln(args...)
+	msg = msg[0 : len(msg)-1]
 	e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
 	panic(l.render.RenderString(e))
 }
