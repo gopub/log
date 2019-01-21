@@ -49,7 +49,9 @@ func newEntry(flags int, level Level, name string, fields []*Field, message stri
 			if flags&Lshortfile != 0 {
 				names := strings.Split(file, "/")
 				for i := 0; i < len(names)-1; i++ {
-					names[i] = names[i][0:1]
+					if len(names[i]) > 0 {
+						names[i] = names[i][0:1]
+					}
 				}
 				file = strings.Join(names, "/")
 			}
