@@ -42,8 +42,8 @@ func newEntry(flags int, level Level, name string, fields []*Field, message stri
 				start := strings.Index(file, GoSrc)
 				if start > 0 {
 					start += len(GoSrc)
+					file = file[start:]
 				}
-				file = file[start:]
 			}
 
 			if flags&Lshortfile != 0 {
