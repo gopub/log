@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"io"
+	"os"
 )
 
 type Field struct {
@@ -49,6 +50,10 @@ type Logger interface {
 
 var defaultLogger Logger
 
+func init() {
+	defaultLogger = NewLogger(os.Stderr)
+}
+
 func Default() Logger {
 	return defaultLogger
 }
@@ -57,12 +62,24 @@ func SetDefault(l Logger) {
 	defaultLogger = l
 }
 
+var _level = AllLevel
+var _flags = LstdFlags
+
+func SetLevel(level Level) Level {
+	_level = level
+	return level
+}
+
+func GetLevel() Level {
+	return _level
+}
+
 func SetFlags(flags int) {
-	defaultLogger.SetFlags(flags)
+	_flags = flags
 }
 
 func Flags() int {
-	return defaultLogger.Flags()
+	return _flags
 }
 
 func GetLogger(name string) Logger {
@@ -105,7 +122,7 @@ func Panic(args ...interface{}) {
 	msg := fmt.Sprintln(args...)
 	msg = msg[0 : len(msg)-1]
 	if l, ok := defaultLogger.(*logger); ok {
-		e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
+		e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
 		panic(l.render.RenderString(e))
 	} else {
 		panic(msg)
@@ -139,7 +156,7 @@ func Fatalf(format string, args ...interface{}) {
 func Panicf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	if l, ok := defaultLogger.(*logger); ok {
-		e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
+		e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
 		panic(l.render.RenderString(e))
 	} else {
 		panic(msg)

@@ -30,10 +30,8 @@ type logger struct {
 	fields []*Field
 }
 
-func NewLogger(output io.Writer, level Level, flags int) Logger {
+func NewLogger(output io.Writer) Logger {
 	l := &logger{
-		level:  level,
-		flags:  flags,
 		render: newRender(output),
 	}
 	return l
@@ -48,24 +46,21 @@ func (l *logger) SetName(name string) {
 }
 
 func (l *logger) Level() Level {
-	return l.level
+	if l.level >= AllLevel {
+		return l.level
+	}
+	return _level
 }
 
 func (l *logger) SetLevel(level Level) {
 	l.level = level
 }
 
-func SetLevel(level Level) Level {
-	defaultLogger.SetLevel(level)
-	return level
-}
-
-func GetLevel() Level {
-	return defaultLogger.Level()
-}
-
 func (l *logger) Flags() int {
-	return l.flags
+	if l.flags > 0 {
+		return l.flags
+	}
+	return _flags
 }
 
 func (l *logger) SetFlags(flags int) {
@@ -77,25 +72,25 @@ func (l *logger) SetOutput(w io.Writer) {
 }
 
 func (l *logger) Log(level Level, callDepth int, args []interface{}) {
-	if l.level > level {
+	if l.Level() > level {
 		return
 	}
 
 	// fmt.Sprint won't add space between args, fmt.Sprintln will do, but need to erase extra newline
 	msg := fmt.Sprintln(args...)
 	msg = msg[0 : len(msg)-1]
-	err := l.render.Render(newEntry(l.flags, level, l.name, l.fields, msg, callDepth+1))
+	err := l.render.Render(newEntry(l.Flags(), level, l.name, l.fields, msg, callDepth+1))
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
 }
 
 func (l *logger) Logf(level Level, callDepth int, format string, args []interface{}) {
-	if l.level > level {
+	if l.Level() > level {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	err := l.render.Render(newEntry(l.flags, level, l.name, l.fields, msg, callDepth+1))
+	err := l.render.Render(newEntry(l.Flags(), level, l.name, l.fields, msg, callDepth+1))
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
@@ -132,7 +127,7 @@ func (l *logger) Panic(args ...interface{}) {
 	// fmt.Sprint won't add space between args
 	msg := fmt.Sprintln(args...)
 	msg = msg[0 : len(msg)-1]
-	e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
+	e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
 	panic(l.render.RenderString(e))
 }
 
@@ -165,7 +160,7 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
-	e := newEntry(l.flags, PanicLevel, l.name, l.fields, msg, 2)
+	e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
 	panic(l.render.RenderString(e))
 }
 

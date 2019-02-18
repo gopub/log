@@ -3,7 +3,7 @@ package log
 type Level int
 
 const (
-	AllLevel Level = iota
+	AllLevel Level = iota + 1
 	TraceLevel
 	DebugLevel
 	InfoLevel
