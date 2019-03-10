@@ -11,6 +11,7 @@ const (
 	ErrorLevel
 	FatalLevel
 	PanicLevel
+	OffLevel
 )
 
 func (l Level) String() string {
