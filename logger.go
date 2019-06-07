@@ -84,7 +84,7 @@ func (l *logger) Log(level Level, callDepth int, args []interface{}) {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
 
-	if l.Level() == FatalLevel {
+	if level == FatalLevel {
 		os.Exit(1)
 	}
 }
@@ -99,7 +99,7 @@ func (l *logger) Logf(level Level, callDepth int, format string, args []interfac
 		log.Fatalf("Failed to write Log: %v", err)
 	}
 
-	if l.Level() == FatalLevel {
+	if level == FatalLevel {
 		os.Exit(1)
 	}
 }
