@@ -94,6 +94,10 @@ func (l *logger) Logf(level Level, callDepth int, format string, args []interfac
 	if err != nil {
 		log.Fatalf("Failed to write Log: %v", err)
 	}
+
+	if l.Level() == FatalLevel {
+		os.Exit(1)
+	}
 }
 
 func (l *logger) Trace(args ...interface{}) {
@@ -118,7 +122,6 @@ func (l *logger) Error(args ...interface{}) {
 
 func (l *logger) Fatal(args ...interface{}) {
 	l.Log(FatalLevel, 2, args)
-	os.Exit(1)
 }
 
 func (l *logger) Panic(args ...interface{}) {
@@ -154,7 +157,6 @@ func (l *logger) Errorf(format string, args ...interface{}) {
 
 func (l *logger) Fatalf(format string, args ...interface{}) {
 	l.Logf(FatalLevel, 2, format, args)
-	os.Exit(1)
 }
 
 func (l *logger) Panicf(format string, args ...interface{}) {
