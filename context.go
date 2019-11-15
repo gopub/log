@@ -2,13 +2,13 @@ package log
 
 import "context"
 
-const keyLogger = "logger"
+const keyLogger = "_logger"
 
-func ContextWithLogger(ctx context.Context, l Logger) context.Context {
+func BuildContext(ctx context.Context, l Logger) context.Context {
 	return context.WithValue(ctx, keyLogger, l)
 }
 
-func ContextLogger(ctx context.Context) Logger {
+func FromContext(ctx context.Context) Logger {
 	l, ok := ctx.Value(keyLogger).(Logger)
 	if ok {
 		return l
