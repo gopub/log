@@ -89,7 +89,7 @@ func renderEntry(buf *[]byte, e *entry) {
 	for _, f := range e.Fields {
 		*buf = append(*buf, f.Key...)
 		*buf = append(*buf, '=')
-		*buf = append(*buf, fmt.Sprintf("%v", f.Value)...)
+		*buf = append(*buf, fmt.Sprintf("%+v", f.Value)...)
 		*buf = append(*buf, ' ')
 	}
 
