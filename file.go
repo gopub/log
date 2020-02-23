@@ -79,13 +79,10 @@ func (w *FileWriter) createNewFileIfRequired() {
 	old := w.file
 	w.size = 0
 	w.file = newFile
-	go func() {
-		time.Sleep(time.Second)
-		err = old.Close()
-		if err != nil {
-			log.Printf("Close file: %v\n", err)
-		}
-	}()
+	err = old.Close()
+	if err != nil {
+		log.Printf("Close file: %v\n", err)
+	}
 }
 
 func (w *FileWriter) Close() error {
