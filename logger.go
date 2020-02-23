@@ -21,8 +21,8 @@ var PackagePath = func() string {
 
 const GoSrc = "/go/src/"
 
-//logger is the default implementation of logger interface
-type logger struct {
+//Logger is the default implementation of *Logger interface
+type Logger struct {
 	name   string
 	level  Level
 	flags  int
@@ -30,48 +30,48 @@ type logger struct {
 	fields []*Field
 }
 
-func NewLogger(output io.Writer) Logger {
-	l := &logger{
+func NewLogger(output io.Writer) *Logger {
+	l := &Logger{
 		render: newRender(output),
 	}
 	return l
 }
 
-func (l *logger) Name() string {
+func (l *Logger) Name() string {
 	return l.name
 }
 
-func (l *logger) SetName(name string) {
+func (l *Logger) SetName(name string) {
 	l.name = name
 }
 
-func (l *logger) Level() Level {
+func (l *Logger) Level() Level {
 	if l.level >= AllLevel {
 		return l.level
 	}
 	return _level
 }
 
-func (l *logger) SetLevel(level Level) {
+func (l *Logger) SetLevel(level Level) {
 	l.level = level
 }
 
-func (l *logger) Flags() int {
+func (l *Logger) Flags() int {
 	if l.flags > 0 {
 		return l.flags
 	}
 	return _flags
 }
 
-func (l *logger) SetFlags(flags int) {
+func (l *Logger) SetFlags(flags int) {
 	l.flags = flags
 }
 
-func (l *logger) SetOutput(w io.Writer) {
+func (l *Logger) SetOutput(w io.Writer) {
 	l.render.SetWriter(w)
 }
 
-func (l *logger) Log(level Level, callDepth int, args []interface{}) {
+func (l *Logger) Log(level Level, callDepth int, args []interface{}) {
 	if l.Level() > level {
 		return
 	}
@@ -81,7 +81,7 @@ func (l *logger) Log(level Level, callDepth int, args []interface{}) {
 	msg = msg[0 : len(msg)-1]
 	err := l.render.Render(newEntry(l.Flags(), level, l.name, l.fields, msg, callDepth+1))
 	if err != nil {
-		log.Fatalf("Failed to write Log: %v", err)
+		log.Fatalf("Render: %v", err)
 	}
 
 	if level == FatalLevel {
@@ -89,14 +89,14 @@ func (l *logger) Log(level Level, callDepth int, args []interface{}) {
 	}
 }
 
-func (l *logger) Logf(level Level, callDepth int, format string, args []interface{}) {
+func (l *Logger) Logf(level Level, callDepth int, format string, args []interface{}) {
 	if l.Level() > level {
 		return
 	}
 	msg := fmt.Sprintf(format, args...)
 	err := l.render.Render(newEntry(l.Flags(), level, l.name, l.fields, msg, callDepth+1))
 	if err != nil {
-		log.Fatalf("Failed to write Log: %v", err)
+		log.Fatalf("Render: %v", err)
 	}
 
 	if level == FatalLevel {
@@ -104,31 +104,31 @@ func (l *logger) Logf(level Level, callDepth int, format string, args []interfac
 	}
 }
 
-func (l *logger) Trace(args ...interface{}) {
+func (l *Logger) Trace(args ...interface{}) {
 	l.Log(TraceLevel, 2, args)
 }
 
-func (l *logger) Debug(args ...interface{}) {
+func (l *Logger) Debug(args ...interface{}) {
 	l.Log(DebugLevel, 2, args)
 }
 
-func (l *logger) Info(args ...interface{}) {
+func (l *Logger) Info(args ...interface{}) {
 	l.Log(InfoLevel, 2, args)
 }
 
-func (l *logger) Warn(args ...interface{}) {
+func (l *Logger) Warn(args ...interface{}) {
 	l.Log(WarnLevel, 2, args)
 }
 
-func (l *logger) Error(args ...interface{}) {
+func (l *Logger) Error(args ...interface{}) {
 	l.Log(ErrorLevel, 2, args)
 }
 
-func (l *logger) Fatal(args ...interface{}) {
+func (l *Logger) Fatal(args ...interface{}) {
 	l.Log(FatalLevel, 2, args)
 }
 
-func (l *logger) Panic(args ...interface{}) {
+func (l *Logger) Panic(args ...interface{}) {
 	if l.level > PanicLevel {
 		return
 	}
@@ -139,31 +139,31 @@ func (l *logger) Panic(args ...interface{}) {
 	panic(l.render.RenderString(e))
 }
 
-func (l *logger) Tracef(format string, args ...interface{}) {
+func (l *Logger) Tracef(format string, args ...interface{}) {
 	l.Logf(TraceLevel, 2, format, args)
 }
 
-func (l *logger) Debugf(format string, args ...interface{}) {
+func (l *Logger) Debugf(format string, args ...interface{}) {
 	l.Logf(DebugLevel, 2, format, args)
 }
 
-func (l *logger) Infof(format string, args ...interface{}) {
+func (l *Logger) Infof(format string, args ...interface{}) {
 	l.Logf(InfoLevel, 2, format, args)
 }
 
-func (l *logger) Warnf(format string, args ...interface{}) {
+func (l *Logger) Warnf(format string, args ...interface{}) {
 	l.Logf(WarnLevel, 2, format, args)
 }
 
-func (l *logger) Errorf(format string, args ...interface{}) {
+func (l *Logger) Errorf(format string, args ...interface{}) {
 	l.Logf(ErrorLevel, 2, format, args)
 }
 
-func (l *logger) Fatalf(format string, args ...interface{}) {
+func (l *Logger) Fatalf(format string, args ...interface{}) {
 	l.Logf(FatalLevel, 2, format, args)
 }
 
-func (l *logger) Panicf(format string, args ...interface{}) {
+func (l *Logger) Panicf(format string, args ...interface{}) {
 	if l.level > PanicLevel {
 		return
 	}
@@ -172,8 +172,8 @@ func (l *logger) Panicf(format string, args ...interface{}) {
 	panic(l.render.RenderString(e))
 }
 
-func (l *logger) WithFields(fields []*Field) Logger {
-	nl := &logger{
+func (l *Logger) WithFields(fields []*Field) *Logger {
+	nl := &Logger{
 		name:   l.name,
 		level:  l.level,
 		flags:  l.flags,
@@ -187,12 +187,12 @@ func (l *logger) WithFields(fields []*Field) Logger {
 	return nl
 }
 
-func (l *logger) With(keyValues ...interface{}) Logger {
+func (l *Logger) With(keyValues ...interface{}) *Logger {
 	return l.WithFields(makeFields(keyValues...))
 }
 
-func (l *logger) Derive(name string) Logger {
-	nl := &logger{
+func (l *Logger) Derive(name string) *Logger {
+	nl := &Logger{
 		name:   l.name,
 		level:  l.level,
 		flags:  l.flags,

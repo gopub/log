@@ -2,7 +2,6 @@ package log
 
 import (
 	"fmt"
-	"io"
 	"os"
 )
 
@@ -11,54 +10,17 @@ type Field struct {
 	Value interface{}
 }
 
-type Logger interface {
-	Name() string
-	SetName(name string)
-	Level() Level
-	SetLevel(level Level)
-	Flags() int
-	SetFlags(flags int)
-	SetOutput(output io.Writer)
-
-	Log(level Level, callDepth int, args []interface{})
-	Logf(level Level, callDepth int, format string, args []interface{})
-
-	Trace(args ...interface{})
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Fatal(args ...interface{})
-	Panic(args ...interface{})
-
-	Tracef(format string, args ...interface{})
-	Debugf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Warnf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-	Fatalf(format string, args ...interface{})
-	Panicf(format string, args ...interface{})
-
-	WithFields([]*Field) Logger
-
-	//With return a new Logger with appending fields
-	//keyValues is key1, value1, key2, value2, ...
-	//key must be convertible to string
-	With(keyValues ...interface{}) Logger
-	Derive(name string) Logger
-}
-
-var defaultLogger Logger
+var defaultLogger *Logger
 
 func init() {
 	defaultLogger = NewLogger(os.Stderr)
 }
 
-func Default() Logger {
+func Default() *Logger {
 	return defaultLogger
 }
 
-func SetDefault(l Logger) {
+func SetDefault(l *Logger) {
 	defaultLogger = l
 }
 
@@ -82,15 +44,15 @@ func Flags() int {
 	return _flags
 }
 
-func GetLogger(name string) Logger {
+func GetLogger(name string) *Logger {
 	return defaultLogger.Derive(name)
 }
 
-func WithFields(fields []*Field) Logger {
+func WithFields(fields []*Field) *Logger {
 	return defaultLogger.WithFields(fields)
 }
 
-func With(keyValues ...interface{}) Logger {
+func With(keyValues ...interface{}) *Logger {
 	return defaultLogger.With(keyValues...)
 }
 
@@ -121,12 +83,9 @@ func Fatal(args ...interface{}) {
 func Panic(args ...interface{}) {
 	msg := fmt.Sprintln(args...)
 	msg = msg[0 : len(msg)-1]
-	if l, ok := defaultLogger.(*logger); ok {
-		e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
-		panic(l.render.RenderString(e))
-	} else {
-		panic(msg)
-	}
+	l := defaultLogger
+	e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
+	panic(l.render.RenderString(e))
 }
 
 func Tracef(format string, args ...interface{}) {
@@ -155,10 +114,7 @@ func Fatalf(format string, args ...interface{}) {
 
 func Panicf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	if l, ok := defaultLogger.(*logger); ok {
-		e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
-		panic(l.render.RenderString(e))
-	} else {
-		panic(msg)
-	}
+	l := defaultLogger
+	e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
+	panic(l.render.RenderString(e))
 }
