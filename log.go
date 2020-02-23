@@ -13,7 +13,12 @@ type Field struct {
 var defaultLogger *Logger
 
 func init() {
-	defaultLogger = NewLogger(os.Stderr)
+	dir := os.Getenv("LOG_DIR")
+	if dir == "" {
+		defaultLogger = NewLogger(os.Stderr)
+	} else {
+		defaultLogger = NewLogger(NewFileWriter(dir))
+	}
 }
 
 func Default() *Logger {
