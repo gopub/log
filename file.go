@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	logSuffix  = "log"
-	maxLogSize = 64 * 1024 * 1024
+	logSuffix      = "log"
+	maxLogSize     = 64 * 1024 * 1024
+	fileDateFormat = "20060102"
 )
 
 // FileWriter writes logs into files
@@ -24,10 +25,10 @@ const (
 type FileWriter struct {
 	dir string
 
-	file   *os.File
-	format string
-	size   int
-	mu     sync.Mutex
+	file       *os.File
+	size       int
+	mu         sync.Mutex
+	DateFormat string
 }
 
 func NewFileWriter(dir string) *FileWriter {
@@ -35,15 +36,14 @@ func NewFileWriter(dir string) *FileWriter {
 	if err != nil {
 		log.Fatalf("Make dir: %s, %v", dir, err)
 	}
-	format := "2006-01-02"
-	f, err := createLogFile(dir, format)
+	f, err := createLogFile(dir, fileDateFormat)
 	if err != nil {
 		log.Fatalf("Create log file: %v", err)
 	}
 	fw := &FileWriter{
-		dir:    dir,
-		file:   f,
-		format: format,
+		dir:        dir,
+		file:       f,
+		DateFormat: fileDateFormat,
 	}
 	return fw
 }
@@ -62,7 +62,7 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 }
 
 func (w *FileWriter) createNewFileIfRequired() {
-	name := time.Now().Format(w.format)
+	name := time.Now().Format(w.DateFormat)
 	if w.size <= maxLogSize && strings.Contains(w.file.Name(), name) {
 		return
 	}
@@ -71,7 +71,7 @@ func (w *FileWriter) createNewFileIfRequired() {
 	if w.size <= maxLogSize && strings.Contains(w.file.Name(), name) {
 		return
 	}
-	newFile, err := createLogFile(w.dir, w.format)
+	newFile, err := createLogFile(w.dir, w.DateFormat)
 	if err != nil {
 		log.Printf("Create log file: %v\n", err)
 		return
