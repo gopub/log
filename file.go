@@ -17,6 +17,10 @@ const (
 	maxLogSize = 64 * 1024 * 1024
 )
 
+// FileWriter writes logs into files
+// Example:
+// fw := log.NewFileWriter("/var/logs/myapp")
+// log.SetDefault(log.NewLogger(fw))
 type FileWriter struct {
 	dir string
 
@@ -48,19 +52,23 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 	if w.file == nil {
 		return 0, errors.New("no open file")
 	}
+	w.createNewFileIfRequired()
 	n, err := w.file.Write(p)
+	if err != nil {
+		return 0, fmt.Errorf("write: %w", err)
+	}
 	w.size += n
-	w.checkFileSize()
-	return n, err
+	return n, nil
 }
 
-func (w *FileWriter) checkFileSize() {
-	if w.size <= maxLogSize {
+func (w *FileWriter) createNewFileIfRequired() {
+	name := time.Now().Format(w.format)
+	if w.size <= maxLogSize && strings.Contains(w.file.Name(), name) {
 		return
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.size <= maxLogSize {
+	if w.size <= maxLogSize && strings.Contains(w.file.Name(), name) {
 		return
 	}
 	newFile, err := createLogFile(w.dir, w.format)
@@ -121,9 +129,9 @@ func createLogFile(dir, format string) (*os.File, error) {
 	}
 	name += fmt.Sprintf(".%d.%s", num, logSuffix)
 	fullPath := path.Join(dir, name)
-	f, err := os.OpenFile(fullPath, os.O_WRONLY, 0644)
+	f, err := os.OpenFile(fullPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("open file %s: %file", fullPath, err)
+		return nil, fmt.Errorf("open file %s: %w", fullPath, err)
 	}
 	return f, nil
 }
