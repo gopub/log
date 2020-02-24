@@ -52,3 +52,6 @@ w, err := os.OpenFile(fileName)
 ...
 log.Default().SetOutput(w)
 ```
+
+### Write logs into files
+If environment value LOG_DIR is defined, logs will be saved into files under LOG_DIR. The format of file name is yyyyMMdd.{Num}.log. E.g. 20200118.1.log.
