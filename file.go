@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	logSuffix      = "log"
-	maxLogSize     = 64 * 1024 * 1024
-	fileDateFormat = "20060102"
+	logSuffix                = "log"
+	minLogFileSize           = 1 << 20  // 1M
+	defaultMaxLogFileSize    = 64 << 20 // 64M
+	defaultLogFileDateFormat = "20060102"
 )
 
 // FileWriter writes logs into files
@@ -25,11 +26,12 @@ const (
 type FileWriter struct {
 	dir string
 
-	file       *os.File
-	date       *time.Time
-	size       int
-	mu         sync.Mutex
-	DateFormat string
+	file        *os.File
+	date        *time.Time
+	size        int
+	mu          sync.Mutex
+	dateFormat  string
+	maxFileSize int
 }
 
 func NewFileWriter(dir string) *FileWriter {
@@ -37,17 +39,44 @@ func NewFileWriter(dir string) *FileWriter {
 	if err != nil {
 		log.Fatalf("Make dir: %s, %v", dir, err)
 	}
-	f, date, err := createLogFile(dir, fileDateFormat)
+	f, date, err := createLogFile(dir, defaultLogFileDateFormat)
 	if err != nil {
 		log.Fatalf("Create log file: %v", err)
 	}
 	fw := &FileWriter{
-		dir:        dir,
-		file:       f,
-		date:       date,
-		DateFormat: fileDateFormat,
+		dir:         dir,
+		file:        f,
+		date:        date,
+		dateFormat:  defaultLogFileDateFormat,
+		maxFileSize: defaultMaxLogFileSize,
 	}
 	return fw
+}
+
+func (w *FileWriter) DateFormat() string {
+	return w.dateFormat
+}
+
+func (w *FileWriter) SetDateFormat(dateFormat string) {
+	if dateFormat == "" {
+		log.Panicf("DateFormat cannot be empty")
+	}
+	if time.Now().Format(dateFormat) == "" {
+		log.Panicf("Invalid dateFormat")
+	}
+	w.dateFormat = dateFormat
+}
+
+func (w *FileWriter) MaxFileSize() int {
+	return w.maxFileSize
+}
+
+func (w *FileWriter) SetMaxFileSize(size int) {
+	if size < minLogFileSize {
+		w.maxFileSize = minLogFileSize
+	} else {
+		w.maxFileSize = size
+	}
 }
 
 func (w *FileWriter) Write(p []byte) (int, error) {
@@ -65,15 +94,15 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 
 func (w *FileWriter) createNewFileIfRequired() {
 	day := time.Now().Day()
-	if w.size <= maxLogSize && day == w.date.Day() {
+	if w.size <= w.maxFileSize && day == w.date.Day() {
 		return
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.size <= maxLogSize && day == w.date.Day() {
+	if w.size <= w.maxFileSize && day == w.date.Day() {
 		return
 	}
-	newFile, date, err := createLogFile(w.dir, w.DateFormat)
+	newFile, date, err := createLogFile(w.dir, w.dateFormat)
 	if err != nil {
 		log.Printf("Create log file: %v\n", err)
 		return
