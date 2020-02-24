@@ -26,6 +26,7 @@ type FileWriter struct {
 	dir string
 
 	file       *os.File
+	date       *time.Time
 	size       int
 	mu         sync.Mutex
 	DateFormat string
@@ -36,13 +37,14 @@ func NewFileWriter(dir string) *FileWriter {
 	if err != nil {
 		log.Fatalf("Make dir: %s, %v", dir, err)
 	}
-	f, err := createLogFile(dir, fileDateFormat)
+	f, date, err := createLogFile(dir, fileDateFormat)
 	if err != nil {
 		log.Fatalf("Create log file: %v", err)
 	}
 	fw := &FileWriter{
 		dir:        dir,
 		file:       f,
+		date:       date,
 		DateFormat: fileDateFormat,
 	}
 	return fw
@@ -62,16 +64,16 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 }
 
 func (w *FileWriter) createNewFileIfRequired() {
-	name := time.Now().Format(w.DateFormat)
-	if w.size <= maxLogSize && strings.Contains(w.file.Name(), name) {
+	day := time.Now().Day()
+	if w.size <= maxLogSize && day == w.date.Day() {
 		return
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.size <= maxLogSize && strings.Contains(w.file.Name(), name) {
+	if w.size <= maxLogSize && day == w.date.Day() {
 		return
 	}
-	newFile, err := createLogFile(w.dir, w.DateFormat)
+	newFile, date, err := createLogFile(w.dir, w.DateFormat)
 	if err != nil {
 		log.Printf("Create log file: %v\n", err)
 		return
@@ -79,6 +81,7 @@ func (w *FileWriter) createNewFileIfRequired() {
 	old := w.file
 	w.size = 0
 	w.file = newFile
+	w.date = date
 	err = old.Close()
 	if err != nil {
 		log.Printf("Close file: %v\n", err)
@@ -88,19 +91,21 @@ func (w *FileWriter) createNewFileIfRequired() {
 func (w *FileWriter) Close() error {
 	err := w.file.Close()
 	w.file = nil
+	w.date = nil
 	return err
 }
 
-func createLogFile(dir, format string) (*os.File, error) {
+func createLogFile(dir, format string) (*os.File, *time.Time, error) {
 	d, err := os.Open(dir)
 	if err != nil {
-		return nil, fmt.Errorf("open dir %s: %w", dir, err)
+		return nil, nil, fmt.Errorf("open dir %s: %w", dir, err)
 	}
 	l, err := d.Readdir(0)
 	if err != nil {
-		return nil, fmt.Errorf("read dir %s: %w", dir, err)
+		return nil, nil, fmt.Errorf("read dir %s: %w", dir, err)
 	}
-	name := time.Now().Format(format)
+	now := time.Now()
+	name := now.Format(format)
 	num := 1
 	for _, fi := range l {
 		s := fi.Name()
@@ -128,7 +133,7 @@ func createLogFile(dir, format string) (*os.File, error) {
 	fullPath := path.Join(dir, name)
 	f, err := os.OpenFile(fullPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("open file %s: %w", fullPath, err)
+		return nil, nil, fmt.Errorf("open file %s: %w", fullPath, err)
 	}
-	return f, nil
+	return f, &now, nil
 }
