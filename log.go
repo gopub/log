@@ -2,7 +2,9 @@ package log
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"strconv"
 )
 
 type Field struct {
@@ -17,7 +19,24 @@ func init() {
 	if dir == "" {
 		defaultLogger = NewLogger(os.Stderr)
 	} else {
-		defaultLogger = NewLogger(NewFileWriter(dir))
+		fw := NewFileWriter(dir)
+		if s := os.Getenv("LOG_ROTATE_KEEP"); s != "" {
+			n, err := strconv.ParseInt(s, 10, 32)
+			if err != nil {
+				log.Printf("Parse LOG_ROTATE_KEEP: %v", err)
+			} else {
+				fw.SetRotateKeep(int(n))
+			}
+		}
+		if s := os.Getenv("LOG_ROTATE_SIZE"); s != "" {
+			n, err := strconv.ParseInt(s, 10, 32)
+			if err != nil {
+				log.Printf("Parse LOG_ROTATE_SIZE: %v", err)
+			} else {
+				fw.SetRotateSize(int(n) << 20)
+			}
+		}
+		defaultLogger = NewLogger(fw)
 	}
 }
 
