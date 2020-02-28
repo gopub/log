@@ -39,13 +39,14 @@ type FileWriter struct {
 	rotateKeep int
 }
 
-func NewFileWriter(dir string) *FileWriter {
+func NewFileWriter(dir string) (*FileWriter, error) {
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		log.Fatalf("Make dir: %s, %v", dir, err)
+		return nil, fmt.Errorf("make dir: %w", err)
 	}
+
 	if d, err := os.Open(dir); err != nil {
-		log.Fatalf("Open dir: %s, %v", dir, err)
+		return nil, fmt.Errorf("open dir: %w", err)
 	} else {
 		dir = d.Name()
 	}
@@ -55,11 +56,11 @@ func NewFileWriter(dir string) *FileWriter {
 		rotateSize: defaultRotateSize,
 		rotateKeep: defaultRotateKeep,
 	}
-	fw.rotate()
-	if fw.file == nil {
-		log.Fatalf("Cannot write logs under dir %s", dir)
+
+	if err = fw.rotate(); err != nil {
+		return nil, fmt.Errorf("rotate: %w", err)
 	}
-	return fw
+	return fw, nil
 }
 
 func (w *FileWriter) RotateSize() int {
@@ -83,9 +84,9 @@ func (w *FileWriter) SetRotateKeep(keep int) {
 		keep = 1
 	}
 	w.rotateKeep = keep
-	names, err := w.getSortedNames()
+	names, err := w.listRotateFileNames()
 	if err != nil {
-		log.Printf("GetSortedNames: %v", err)
+		log.Printf("List rotate filenames: %v\n", err)
 		return
 	}
 	go w.keepFiles(names, keep)
@@ -95,44 +96,39 @@ func (w *FileWriter) Write(p []byte) (int, error) {
 	if w.file == nil {
 		return 0, errors.New("no open file")
 	}
-	w.rotate()
+	if err := w.rotate(); err != nil {
+		return 0, fmt.Errorf("rotate: %w", err)
+	}
 	n, err := w.file.Write(p)
 	if err != nil {
-		return 0, fmt.Errorf("write: %w", err)
+		return n, fmt.Errorf("write: %w", err)
 	}
 	w.size += n
 	return n, nil
 }
 
-func (w *FileWriter) rotate() {
+func (w *FileWriter) rotate() error {
 	day := time.Now().Day()
 	if w.size <= w.rotateSize && w.date != nil && day == w.date.Day() {
-		return
+		return nil
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.size <= w.rotateSize && w.date != nil && day == w.date.Day() {
-		return
+		return nil
 	}
 
-	names, err := w.getSortedNames()
+	names, err := w.listRotateFileNames()
 	if err != nil {
-		log.Printf("GetSortedNames: %v\n", err)
-		return
+		return fmt.Errorf("list rotate file names: %w", err)
 	}
 	date := time.Now()
 	dateStr := date.Format(rotateDateFormat)
-	num, err := w.parseNextNum(dateStr, names)
+	num := w.nextFileNumber(dateStr, names)
+	filePath := path.Join(w.dir, fmt.Sprintf("%s.%d.%s", dateStr, num, rotateSuffix))
+	newFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Printf("ParseNextNum: %v\n", err)
-		return
-	}
-
-	name := fmt.Sprintf("%s.%d.%s", dateStr, num, rotateSuffix)
-	fullPath := path.Join(w.dir, name)
-	newFile, err := os.OpenFile(fullPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Printf("OpenFile %s: %v", fullPath, err)
+		return fmt.Errorf("open file %s: %w", filePath, err)
 	}
 	old := w.file
 	w.size = 0
@@ -145,6 +141,7 @@ func (w *FileWriter) rotate() {
 		}
 	}
 	go w.keepFiles(names, w.rotateKeep-1)
+	return nil
 }
 
 func (w *FileWriter) Close() error {
@@ -154,7 +151,7 @@ func (w *FileWriter) Close() error {
 	return err
 }
 
-func (w *FileWriter) getSortedNames() (rotateNameList, error) {
+func (w *FileWriter) listRotateFileNames() (rotateNameList, error) {
 	d, err := os.Open(w.dir)
 	if err != nil {
 		return nil, fmt.Errorf("open dir %s: %w", w.dir, err)
@@ -174,21 +171,23 @@ func (w *FileWriter) getSortedNames() (rotateNameList, error) {
 	return names, nil
 }
 
-func (w *FileWriter) parseNextNum(date string, sortedNames []string) (int, error) {
+func (w *FileWriter) nextFileNumber(date string, sortedNames []string) int {
 	if len(sortedNames) == 0 {
-		return 1, nil
+		return 1
 	}
 
-	latest := sortedNames[0]
-	if !strings.HasPrefix(sortedNames[0], date) {
-		return 1, nil
+	for _, name := range sortedNames {
+		if !strings.HasPrefix(name, date) {
+			return 1
+		}
+		s := name[len(date)+1 : len(name)-len(rotateSuffix)-1]
+		n, err := strconv.ParseInt(s, 10, 32)
+		if err != nil {
+			log.Printf("Parse number %s: %v\n", s, err)
+		}
+		return int(n + 1)
 	}
-	numPart := latest[len(date)+1 : len(latest)-len(rotateSuffix)-1]
-	n, err := strconv.ParseInt(numPart, 10, 32)
-	if err != nil {
-		return 0, fmt.Errorf("parseInt %s: %w", numPart, err)
-	}
-	return int(n + 1), nil
+	return 1
 }
 
 func (w *FileWriter) keepFiles(sortedNames []string, size int) {
