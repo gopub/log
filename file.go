@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"sort"
@@ -140,7 +141,14 @@ func (w *FileWriter) rotate() error {
 			log.Printf("Close file: %v\n", err)
 		}
 	}
-	go w.keepFiles(names, w.rotateKeep-1)
+	latestFile := path.Join(w.dir, "latest.log")
+	go func() {
+		w.keepFiles(names, w.rotateKeep-1)
+		err := exec.Command("ln", "-sf", filePath, latestFile).Run()
+		if err != nil {
+			log.Printf("Link: %v", err)
+		}
+	}()
 	return nil
 }
 
