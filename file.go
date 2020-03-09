@@ -20,7 +20,7 @@ const (
 	rotateDateFormat  = "20060102"
 	minRotateSize     = 1 << 20  // 1M
 	defaultRotateSize = 64 << 20 // 64M
-	defaultRotateKeep = 64
+	defaultRotateKeep = 30       // 30 days
 )
 
 var rotateNameRegex = regexp.MustCompile("[0-9]{8}\\.[0-9]+\\." + rotateSuffix)
@@ -81,8 +81,8 @@ func (w *FileWriter) RotateKeep() int {
 }
 
 func (w *FileWriter) SetRotateKeep(keep int) {
-	if keep <= 0 {
-		keep = 1
+	if keep < 0 {
+		keep = 0
 	}
 	w.rotateKeep = keep
 	names, err := w.listRotateFileNames()
@@ -90,7 +90,7 @@ func (w *FileWriter) SetRotateKeep(keep int) {
 		log.Printf("List rotate filenames: %v\n", err)
 		return
 	}
-	go w.keepFiles(names, keep)
+	go w.keepFilesByDate(names, keep)
 }
 
 func (w *FileWriter) Write(p []byte) (int, error) {
@@ -143,7 +143,7 @@ func (w *FileWriter) rotate() error {
 	}
 	latestFile := path.Join(w.dir, "latest.log")
 	go func() {
-		w.keepFiles(names, w.rotateKeep-1)
+		w.keepFilesByDate(names, w.rotateKeep)
 		err := exec.Command("ln", "-sf", filePath, latestFile).Run()
 		if err != nil {
 			log.Printf("Link: %v", err)
@@ -198,16 +198,31 @@ func (w *FileWriter) nextFileNumber(date string, sortedNames []string) int {
 	return 1
 }
 
-func (w *FileWriter) keepFiles(sortedNames []string, size int) {
-	if len(sortedNames) <= size {
+func (w *FileWriter) keepFilesByDate(names []string, days int) {
+	dateStr := time.Now().AddDate(0, 0, -days).Format(rotateDateFormat)
+	for _, name := range names {
+		if strings.Compare(dateStr, name) < 0 {
+			continue
+		}
+		w.deleteFile(name)
+	}
+}
+
+// Deprecated: use keepFilesByDate strategy
+func (w *FileWriter) keepFilesByNum(sortedNames []string, num int) {
+	if len(sortedNames) <= num {
 		return
 	}
-	for _, name := range sortedNames[size:] {
-		fullPath := path.Join(w.dir, name)
-		err := os.Remove(fullPath)
-		if err != nil {
-			log.Printf("Remove %s: %v\n", fullPath, err)
-		}
+	for _, name := range sortedNames[num:] {
+		w.deleteFile(name)
+	}
+}
+
+func (w *FileWriter) deleteFile(name string) {
+	fullPath := path.Join(w.dir, name)
+	err := os.Remove(fullPath)
+	if err != nil {
+		log.Printf("Remove %s: %v\n", fullPath, err)
 	}
 }
 
