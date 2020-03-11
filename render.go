@@ -8,21 +8,32 @@ import (
 )
 
 type render struct {
-	wr  io.Writer
-	mu  sync.Mutex
-	buf []byte
+	outputs []io.Writer
+	mu      sync.Mutex
+	buf     []byte
 }
 
-func newRender(wr io.Writer) *render {
+func newRender(outputs ...io.Writer) *render {
 	return &render{
-		wr:  wr,
-		buf: make([]byte, 0, 2048), // 2048 bytes should be enough for most Log entry
+		outputs: outputs,
+		buf:     make([]byte, 0, 2048), // 2048 bytes should be enough for most Log entry
 	}
 }
 
-func (r *render) SetWriter(wr io.Writer) {
+func (r *render) AddOutput(o io.Writer) {
 	r.mu.Lock()
-	r.wr = wr
+	r.outputs = append(r.outputs, o)
+	r.mu.Unlock()
+}
+
+func (r *render) RemoveOutput(o io.Writer) {
+	r.mu.Lock()
+	for i, v := range r.outputs {
+		if v == o {
+			r.outputs = append(r.outputs[:i], r.outputs[i+1:]...)
+			break
+		}
+	}
 	r.mu.Unlock()
 }
 
@@ -33,13 +44,17 @@ func (r *render) Render(e *entry) error {
 	renderEntry(&r.buf, e)
 
 	// flush buffer to writer
-	buf := r.buf
-	n, err := r.wr.Write(buf)
-	for n < len(buf) && err == nil {
-		buf = buf[n:]
-		n, err = r.wr.Write(buf)
+	var err error
+	for _, o := range r.outputs {
+		_, oErr := o.Write(r.buf)
+		if oErr != nil {
+			if err == nil {
+				err = oErr
+			} else {
+				err = fmt.Errorf("%w: %v", err, oErr)
+			}
+		}
 	}
-
 	r.mu.Unlock()
 	return err
 }
