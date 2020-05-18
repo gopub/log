@@ -36,24 +36,10 @@ func newEntry(flags int, level Level, name string, fields []*Field, message stri
 		function, file, line, _ := runtime.Caller(callDepth)
 		e.Line = line
 		if flags&(Llongfile|Lshortfile) != 0 {
-			if len(PackagePath) > 0 {
-				file = strings.TrimPrefix(file, PackagePath)
-			} else {
-				start := strings.Index(file, GoSrc)
-				if start > 0 {
-					start += len(GoSrc)
-					file = file[start:]
-				}
-			}
-
 			if flags&Lshortfile != 0 {
-				names := strings.Split(file, "/")
-				for i := 0; i < len(names)-1; i++ {
-					if len(names[i]) > 0 {
-						names[i] = names[i][0:1]
-					}
-				}
-				file = strings.Join(names, "/")
+				file = ShortPath(file)
+			} else {
+				file = RelativePath(file)
 			}
 		} else {
 			file = ""
@@ -76,4 +62,27 @@ func newEntry(flags int, level Level, name string, fields []*Field, message stri
 	e.Fields = fields
 	e.Level = level
 	return e
+}
+
+func RelativePath(path string) string {
+	if len(PackagePath) > 0 {
+		return strings.TrimPrefix(path, PackagePath)
+	}
+	start := strings.Index(path, GoSrc)
+	if start > 0 {
+		start += len(GoSrc)
+		path = path[start:]
+	}
+	return path
+}
+
+func ShortPath(path string) string {
+	path = RelativePath(path)
+	names := strings.Split(path, "/")
+	for i := 0; i < len(names)-1; i++ {
+		if len(names[i]) > 0 {
+			names[i] = names[i][0:1]
+		}
+	}
+	return strings.Join(names, "/")
 }
