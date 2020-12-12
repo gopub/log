@@ -122,6 +122,7 @@ func (l *Logger) Error(args ...interface{}) {
 
 func (l *Logger) Fatal(args ...interface{}) {
 	l.Log(FatalLevel, 2, args)
+	os.Exit(1)
 }
 
 func (l *Logger) Panic(args ...interface{}) {
@@ -157,6 +158,7 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 
 func (l *Logger) Fatalf(format string, args ...interface{}) {
 	l.Logf(FatalLevel, 2, format, args)
+	os.Exit(1)
 }
 
 func (l *Logger) Panicf(format string, args ...interface{}) {
