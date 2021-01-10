@@ -153,3 +153,24 @@ func Panicf(format string, args ...interface{}) {
 	e := newEntry(l.Flags(), PanicLevel, l.name, l.fields, msg, 2)
 	panic(l.render.RenderString(e))
 }
+
+func ErrorE(err error) {
+	if err == nil {
+		return
+	}
+	Error(err)
+}
+
+func FatalE(err error) {
+	if err == nil {
+		return
+	}
+	Fatal(err)
+}
+
+func PanicE(err error) {
+	if err == nil {
+		return
+	}
+	Panic(err)
+}
