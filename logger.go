@@ -215,6 +215,10 @@ func makeFields(keyValues ...interface{}) []*Field {
 
 	fields := make([]*Field, 0, n/2)
 	for i := 0; i < n/2; i++ {
+		if isEmptyString(keyValues[2*i+1].(string)) {
+			continue
+		}
+
 		if k, ok := keyValues[2*i].(string); !ok {
 			defaultLogger.Panicf("keyValues[%d] isn't convertible to string", i)
 		} else if keyValues[2*i+1] == nil {
@@ -225,4 +229,16 @@ func makeFields(keyValues ...interface{}) []*Field {
 	}
 
 	return fields
+}
+
+func isEmptyString(i interface{}) bool {
+	if i == nil {
+		return true
+	}
+
+	if s, ok := i.(string); ok && s == "" {
+		return true
+	}
+
+	return false
 }
