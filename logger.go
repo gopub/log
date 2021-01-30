@@ -215,7 +215,7 @@ func makeFields(keyValues ...interface{}) []*Field {
 
 	fields := make([]*Field, 0, n/2)
 	for i := 0; i < n/2; i++ {
-		if isEmptyString(keyValues[2*i+1].(string)) {
+		if isEmptyString(keyValues[2*i+1]) {
 			continue
 		}
 
