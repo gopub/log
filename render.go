@@ -96,7 +96,7 @@ func renderEntry(buf *[]byte, e *entry) {
 	if len(e.File) > 0 || len(e.Function) > 0 {
 		*buf = append(*buf, ':')
 		itoa(&*buf, e.Line, -1)
-		*buf = append(*buf, '\t')
+		*buf = append(*buf, ' ')
 		*buf = append(*buf, '|')
 		*buf = append(*buf, ' ')
 	}
@@ -109,7 +109,7 @@ func renderEntry(buf *[]byte, e *entry) {
 	}
 
 	if len(e.Fields) > 0 {
-		*buf = append(*buf, '\t')
+		*buf = append(*buf, ' ')
 		*buf = append(*buf, '|')
 		*buf = append(*buf, ' ')
 	}
