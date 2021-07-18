@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"regexp"
 	"sort"
@@ -141,14 +140,15 @@ func (w *FileWriter) rotate() error {
 			log.Printf("Close file: %v\n", err)
 		}
 	}
-	latestFile := path.Join(w.dir, "latest.log")
-	go func() {
-		w.keepFilesByDate(names, w.rotateKeep)
-		err := exec.Command("ln", "-sf", filePath, latestFile).Run()
-		if err != nil {
-			log.Printf("Link: %v", err)
-		}
-	}()
+	go w.keepFilesByDate(names, w.rotateKeep)
+	//latestFile := path.Join(w.dir, "latest.log")
+	//go func() {
+	//	w.keepFilesByDate(names, w.rotateKeep)
+	//	err := exec.Command("ln", "-sf", filePath, latestFile).Run()
+	//		if err != nil {
+	//		log.Printf("Link: %v", err)
+	//	}
+	//}()
 	return nil
 }
 
@@ -159,7 +159,7 @@ func (w *FileWriter) Close() error {
 	return err
 }
 
-func (w *FileWriter) listRotateFileNames() (rotateNameList, error) {
+func (w *FileWriter) listRotateFileNames() ([]string, error) {
 	d, err := os.Open(w.dir)
 	if err != nil {
 		return nil, fmt.Errorf("open dir %s: %w", w.dir, err)
@@ -168,22 +168,20 @@ func (w *FileWriter) listRotateFileNames() (rotateNameList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read dir %s: %w", w.dir, err)
 	}
-	var names rotateNameList
+	var names []string
 	for _, fi := range l {
 		if !rotateNameRegex.MatchString(fi.Name()) {
 			continue
 		}
 		names = append(names, fi.Name())
 	}
-	sort.Sort(names)
+	sort.Slice(names, func(i, j int) bool {
+		return compareFileName(names[i], names[j])
+	})
 	return names, nil
 }
 
 func (w *FileWriter) nextFileNumber(date string, sortedNames []string) int {
-	if len(sortedNames) == 0 {
-		return 1
-	}
-
 	for _, name := range sortedNames {
 		if !strings.HasPrefix(name, date) {
 			return 1
@@ -192,6 +190,7 @@ func (w *FileWriter) nextFileNumber(date string, sortedNames []string) int {
 		n, err := strconv.ParseInt(s, 10, 32)
 		if err != nil {
 			log.Printf("Parse number %s: %v\n", s, err)
+			continue
 		}
 		return int(n + 1)
 	}
@@ -226,28 +225,18 @@ func (w *FileWriter) deleteFile(name string) {
 	}
 }
 
-type rotateNameList []string
-
-func (l rotateNameList) Len() int {
-	return len(l)
-}
-
-func (l rotateNameList) Swap(i, j int) {
-	l[i], l[j] = l[j], l[i]
-}
-
-func (l rotateNameList) Less(i, j int) bool {
+func compareFileName(a, b string) bool {
 	dateLen := len(rotateDateFormat)
 	// Compare date first
-	if v := strings.Compare(l[i][:dateLen], l[j][:dateLen]); v != 0 {
+	if v := strings.Compare(a[:dateLen], b[:dateLen]); v != 0 {
 		return v > 0
 	}
 
 	// Same date, compare digit length first
-	if v := len(l[i]) - len(l[j]); v != 0 {
+	if v := len(a) - len(b); v != 0 {
 		return v > 0
 	}
 
 	// Same digit length, compare value
-	return strings.Compare(l[i][dateLen:], l[j][dateLen:]) > 0
+	return strings.Compare(a[dateLen:], b[dateLen:]) > 0
 }
